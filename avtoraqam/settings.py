@@ -169,8 +169,12 @@ EXPIRY_WARNING_DAYS = int(os.environ.get('EXPIRY_WARNING_DAYS', '14'))
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     SECURE_SSL_REDIRECT = os.environ.get('DJANGO_SECURE_SSL_REDIRECT', 'true').lower() in {'1', 'true', 'yes'}
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = os.environ.get(
+        'DJANGO_SESSION_COOKIE_SECURE', 'true'
+    ).lower() in {'1', 'true', 'yes'}
+    CSRF_COOKIE_SECURE = os.environ.get(
+        'DJANGO_CSRF_COOKIE_SECURE', 'true'
+    ).lower() in {'1', 'true', 'yes'}
     SECURE_HSTS_SECONDS = int(os.environ.get('DJANGO_SECURE_HSTS_SECONDS', '31536000'))
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True

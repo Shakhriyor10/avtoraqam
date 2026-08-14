@@ -63,6 +63,18 @@ class ServiceRecord(models.Model):
         NOT_RELEVANT = 'not_relevant', 'Услуга больше не актуальна'
         OTHER = 'other', 'Другая причина'
 
+    class DocumentRecipient(models.TextChoices):
+        OTA = 'ota', 'ОТА'
+        ONA = 'ona', 'ОНА'
+        ER = 'er', 'ЭР'
+        XOTIN = 'xotin', 'ХОТИН'
+        UGIL = 'ugil', 'УГИЛ'
+        QIZ = 'qiz', 'КИЗ'
+        AKA = 'aka', 'АКА'
+        UKA = 'uka', 'УКА'
+        OPA = 'opa', 'ОПА'
+        SINGIL = 'singil', 'СИНГИЛ'
+
     client = models.ForeignKey(Client, related_name='services', on_delete=models.CASCADE)
     vehicle = models.ForeignKey(Vehicle, related_name='services', on_delete=models.CASCADE)
     service_type = models.CharField('Тип услуги', max_length=32, choices=ServiceType.choices)
@@ -71,6 +83,10 @@ class ServiceRecord(models.Model):
     expires_on = models.DateField('Действует до')
     price = models.DecimalField('Стоимость', max_digits=12, decimal_places=2, null=True, blank=True)
     notes = models.TextField('Примечание', blank=True)
+    document_recipient = models.CharField(
+        'Кому переданы документы', max_length=16,
+        choices=DocumentRecipient.choices, blank=True,
+    )
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, related_name='created_services', null=True, blank=True,
         on_delete=models.SET_NULL, verbose_name='Сотрудник'

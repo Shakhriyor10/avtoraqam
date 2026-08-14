@@ -4,6 +4,7 @@
 .service-card:hover{transform:translateY(-5px);box-shadow:0 18px 38px rgba(23,32,51,.13);border-color:transparent}
 .service-art{position:absolute;right:19px;top:17px;display:grid;place-items:center;width:104px;height:104px;color:#315cf3}
 .service-art svg{width:82px;height:82px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.service-art svg .tinted-window{fill:currentColor;fill-opacity:.22}
 .service-card.tinting .service-art{color:#14926c}
 .service-card.power_of_attorney .service-art{color:#dc8700}
 .service-card.other .service-art{color:#7653ce}

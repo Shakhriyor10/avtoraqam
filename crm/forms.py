@@ -67,6 +67,10 @@ class ServiceCreateForm(forms.Form):
     service_files = MultipleFileField(
         label='Документы услуги — до 3 файлов', required=False, max_files=3
     )
+    document_recipient = forms.ChoiceField(
+        label='Кому переданы документы', choices=[('', 'Не указано'), *ServiceRecord.DocumentRecipient.choices],
+        required=False,
+    )
 
     def clean(self):
         data = super().clean()
@@ -145,7 +149,6 @@ class AdditionalServiceForm(forms.Form):
     service_files = MultipleFileField(
         label='Документы услуги — до 3 файлов', required=False, max_files=3
     )
-
     def clean(self):
         data = super().clean()
         if data.get('enabled') and not data.get('expires_on'):
@@ -177,7 +180,7 @@ class ServiceEditForm(forms.ModelForm):
 
     class Meta:
         model = ServiceRecord
-        fields = ['vehicle', 'issued_on', 'expires_on', 'price', 'notes']
+        fields = ['vehicle', 'issued_on', 'expires_on', 'price', 'notes', 'document_recipient']
         widgets = {
             'issued_on': forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date'}),
             'expires_on': forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date'}),

@@ -508,6 +508,7 @@ def service_create(request, service_type):
             'expires_on': form.cleaned_data['expires_on'],
             'price': form.cleaned_data['price'],
             'notes': form.cleaned_data['notes'],
+            'document_recipient': form.cleaned_data['document_recipient'],
             'files': request.FILES.getlist('service_files'),
         }]
         for index, extra_form in enumerate([] if renewing_service or not additional_posted else additional_services):
@@ -517,6 +518,7 @@ def service_create(request, service_type):
                     'expires_on': extra_form.cleaned_data['expires_on'],
                     'price': extra_form.cleaned_data['price'],
                     'notes': '',
+                    'document_recipient': form.cleaned_data['document_recipient'],
                     'files': request.FILES.getlist(f'additional-{index}-service_files'),
                 })
         for service_data in services_to_create:

@@ -67,8 +67,7 @@ input:disabled,select:disabled,textarea:disabled{background:#f1f3f6;color:#9ba5b
 .user small{color:rgba(255,255,255,.7)}
 .logout-button{border-color:rgba(255,255,255,.4);color:#fff}
 .logout-button:hover{background:rgba(15,89,88,.24)}
-.service-art,.service-arrow,.notification-icon{color:#41B9B8!important}
-.service-card:hover .service-arrow{background:#41B9B8!important;color:#fff!important}
+.notification-icon{color:#41B9B8!important}
 .button.secondary{background:#e4f7f7;color:#278f8e!important}
 .searchable-select:focus-within::before{background:#dff5f5}
 .search-option:hover,.search-option.selected{background:#e4f7f7;color:var(--blue)}

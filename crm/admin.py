@@ -27,7 +27,7 @@ class ServiceFileInline(admin.TabularInline):
 
 @admin.register(ServiceRecord)
 class ServiceRecordAdmin(admin.ModelAdmin):
-    list_display = ('client', 'service_type', 'vehicle', 'expires_on', 'status_label')
+    list_display = ('client', 'service_type', 'vehicle', 'document_recipient', 'expires_on', 'status_label')
     list_filter = ('service_type', 'expires_on')
     search_fields = ('client__full_name', 'client__phone', 'vehicle__plate_number')
     autocomplete_fields = ('client', 'vehicle')

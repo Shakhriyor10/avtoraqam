@@ -1,0 +1,40 @@
+{% load static %}
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Avtoraqam CRM{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'crm/app.css' %}">
+  <link rel="stylesheet" href="{% static 'crm/forms.css' %}?v=5">
+  <link rel="stylesheet" href="{% static 'crm/dashboard.css' %}">
+  <link rel="stylesheet" href="{% static 'crm/close-service.css' %}?v=7">
+  <script src="{% static 'crm/app.js' %}?v=4" defer></script>
+  <script src="{% static 'crm/registry.js' %}?v=5" defer></script>
+  <script src="{% static 'crm/clients.js' %}?v=3" defer></script>
+  <script src="{% static 'crm/client-detail.js' %}?v=1" defer></script>
+  <script src="{% static 'crm/close-service.js' %}?v=4" defer></script>
+  <script src="{% static 'crm/delete-service.js' %}?v=3" defer></script>
+  <script src="{% static 'crm/delete-client.js' %}?v=1" defer></script>
+  <script src="{% static 'crm/client-edit.js' %}?v=1" defer></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <a class="brand brand-logo" href="{% url 'crm:dashboard' %}"><span class="logo-frame"><img src="{% static 'img/avtoraqam_logo.png' %}" alt="Avtoraqam Samarkand"></span></a>
+    <nav>
+      <a href="{% url 'crm:dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">Обзор</a>
+      <a href="{% url 'crm:client_list' %}" class="{% if 'client' in request.resolver_match.url_name %}active{% endif %}">Клиенты</a>
+      <a href="{% url 'crm:service_type_select' %}" class="{% if 'service' in request.resolver_match.url_name %}active{% endif %}">Новая услуга</a>
+      <a href="{% url 'crm:notification_settings' %}" class="{% if request.resolver_match.url_name == 'notification_settings' %}active{% endif %}">Настройки</a>
+    </nav>
+    <div class="sidebar-account"><div class="user">{{ request.user.get_full_name|default:request.user.username }}<small>Сотрудник</small></div><form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit" class="logout-button"><svg viewBox="0 0 24 24"><path d="M10 5H5v14h5M14 8l4 4-4 4m4-4H9"/></svg>Выйти</button></form></div>
+  </aside>
+  <main>
+    {% if messages %}{% for message in messages %}<div class="message">{{ message }}</div>{% endfor %}{% endif %}
+    {% block content %}{% endblock %}
+  </main>
+  <div class="vehicle-modal" id="close-service-modal" hidden><div class="vehicle-modal-backdrop" data-close-modal-dismiss></div><section class="vehicle-modal-dialog close-modal-dialog" role="dialog" aria-modal="true"><button type="button" class="modal-close" data-close-modal-dismiss>×</button><p class="eyebrow">Закрытие предупреждения</p><h2 id="close-modal-title">Закрыть услугу</h2><p id="close-modal-summary" class="close-modal-summary"></p><form id="close-service-form" method="post">{% csrf_token %}<div class="reason-options"><label><input type="radio" name="reason" value="elsewhere" required><span>Оформлено в другом месте</span></label><label><input type="radio" name="reason" value="declined" required><span>Клиент отказался</span></label><label><input type="radio" name="reason" value="not_relevant" required><span>Услуга больше не актуальна</span></label><label><input type="radio" name="reason" value="other" required><span>Другая причина</span></label></div><small class="error" id="close-service-error"></small><div class="modal-actions"><button type="button" class="button secondary" data-close-modal-dismiss>Отмена</button><button type="submit" class="button">Закрыть предупреждение</button></div></form></section></div>
+  <div class="vehicle-modal" id="delete-service-modal" hidden><div class="vehicle-modal-backdrop" data-delete-modal-dismiss></div><section class="vehicle-modal-dialog delete-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="delete-modal-title"><button type="button" class="modal-close" data-delete-modal-dismiss>×</button><h2 id="delete-modal-title">Удалить услугу?</h2><p id="delete-modal-summary" class="close-modal-summary"></p><div class="delete-warning"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 9v4m0 4h.01M10.3 4.6 2.7 18a2 2 0 0 0 1.7 3h15.2a2 2 0 0 0 1.7-3L13.7 4.6a2 2 0 0 0-3.4 0Z"/></svg><span>Действие нельзя отменить.</span></div><form id="delete-service-form" method="post">{% csrf_token %}<label><span>Пароль для подтверждения</span><input type="password" name="password" autocomplete="current-password" required></label><small class="error" id="delete-service-error"></small><div class="modal-actions"><button type="button" class="button secondary" data-delete-modal-dismiss>Отмена</button><button type="submit" class="button danger-button">Удалить</button></div></form></section></div>
+  <div class="vehicle-modal" id="delete-client-modal" hidden><div class="vehicle-modal-backdrop" data-delete-client-dismiss></div><section class="vehicle-modal-dialog delete-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="delete-client-title"><button type="button" class="modal-close" data-delete-client-dismiss>×</button><h2 id="delete-client-title">Удалить клиента?</h2><p id="delete-client-summary" class="close-modal-summary"></p><div class="delete-warning"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 9v4m0 4h.01M10.3 4.6 2.7 18a2 2 0 0 0 1.7 3h15.2a2 2 0 0 0 1.7-3L13.7 4.6a2 2 0 0 0-3.4 0Z"/></svg><span>Удалятся автомобили, услуги и все файлы клиента.</span></div><form id="delete-client-form" method="post">{% csrf_token %}<label><span>Пароль для подтверждения</span><input type="password" name="password" autocomplete="current-password" required></label><small class="error" id="delete-client-error"></small><div class="modal-actions"><button type="button" class="button secondary" data-delete-client-dismiss>Отмена</button><button type="submit" class="button danger-button">Удалить</button></div></form></section></div>
+</body>
+</html>

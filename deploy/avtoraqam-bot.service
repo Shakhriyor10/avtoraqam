@@ -1,0 +1,18 @@
+[Unit]
+Description=Avtoraqam Telegram Bot
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=avtoraqam
+Group=www-data
+WorkingDirectory=/var/www/avtoraqam
+EnvironmentFile=/var/www/avtoraqam/.env
+ExecStart=/var/www/avtoraqam/.venv/bin/python manage.py runbot
+Restart=always
+RestartSec=10
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

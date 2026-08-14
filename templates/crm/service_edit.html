@@ -1,0 +1,15 @@
+{% extends 'crm/base.html' %}
+{% block title %}Редактирование услуги · Avtoraqam CRM{% endblock %}
+{% block content %}
+<header><div><p class="eyebrow">Редактирование услуги</p><h1>{{ service.get_service_type_display }}</h1><p>{{ service.client.full_name }} · {{ service.client.phone }}</p></div></header>
+<form method="post" enctype="multipart/form-data" class="form-card">{% csrf_token %}
+  <fieldset><legend><span>1</span> Данные документа</legend><div class="form-grid">
+    {% for field in form %}<label class="{% if field.name == 'notes' or field.name == 'service_files' %}wide{% endif %}"><span>{{ field.label }}</span>{{ field }}{% if field.errors %}<small class="error">{{ field.errors|striptags }}</small>{% endif %}</label>{% endfor %}
+  </div></fieldset>
+  {% if service.files.exists %}<fieldset><legend><span>2</span> Текущие документы</legend><div class="editable-files">
+    {% for item in service.files.all %}<div><a href="{{ item.file.url }}" target="_blank">{{ item.file.name }}</a><button type="submit" form="delete-service-file-{{ item.pk }}" class="delete-link">Удалить</button></div>{% endfor %}
+  </div></fieldset>{% endif %}
+  <div class="form-actions"><a href="{% url 'crm:client_detail' service.client_id %}">Отмена</a><button class="button" type="submit">Сохранить изменения</button></div>
+</form>
+{% for item in service.files.all %}<form id="delete-service-file-{{ item.pk }}" method="post" action="{% url 'crm:service_file_delete' item.pk %}" onsubmit="return confirm('Удалить этот файл?')">{% csrf_token %}</form>{% endfor %}
+{% endblock %}

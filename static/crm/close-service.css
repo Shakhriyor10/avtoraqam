@@ -1,0 +1,13 @@
+.badge.closed{background:#eef0f4;color:#667085}
+.badge.renewed{background:#e7f8f1;color:var(--green)}
+.close-service-link{display:inline-block;color:#c56a00!important;font-weight:700;text-decoration:none}
+.renew-service-link{display:inline-block;color:var(--green)!important;font-weight:800;text-decoration:none}
+.delete-service-link,.delete-client-link{display:grid;place-items:center;width:32px;height:32px;padding:0;border:0;border-radius:8px;background:#fff0f0;color:var(--red);cursor:pointer}.delete-service-link:hover,.delete-client-link:hover{background:#fee2e2}.delete-service-link svg,.delete-client-link svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.delete-client-button{display:flex;width:auto;height:auto;gap:8px;padding:11px 15px;font-weight:800}.delete-modal-dialog{width:min(500px,100%);padding:26px}.delete-modal-dialog h2{margin-bottom:8px}.delete-modal-dialog .close-modal-summary{margin-bottom:16px}.delete-warning{display:flex;align-items:center;gap:10px;margin:0 0 18px;padding:11px 13px;border:1px solid #ffd8d8;border-radius:10px;background:#fff7f7;color:#b83232;font-size:14px;font-weight:650}.delete-warning svg{flex:0 0 20px;width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.delete-modal-dialog form{gap:12px}.delete-modal-dialog .modal-actions{margin-top:4px}.danger-button{background:var(--red)}
+.table-card th:last-child,.table-card td:last-child{text-align:right}.row-actions{display:flex;align-items:center;justify-content:flex-end;gap:12px;width:100%;white-space:nowrap}.row-actions .delete-service-link,.row-actions .delete-client-link{flex:0 0 32px;margin-left:2px}
+.close-service-card{display:grid;grid-template-columns:minmax(280px,.8fr) minmax(420px,1.2fr);gap:22px}
+.close-service-summary,.close-service-card form{padding:28px;background:#fff;border:1px solid var(--line);border-radius:15px}
+.close-service-summary h2{margin:18px 0 8px}.close-service-summary p{margin-bottom:20px}
+.close-service-card form h3{margin:0 0 18px}.reason-options{display:grid;gap:10px;margin-bottom:24px}
+.reason-options label{display:flex;align-items:center;gap:12px;padding:15px;border:1px solid var(--line);border-radius:10px;cursor:pointer}
+.reason-options label:has(input:checked){border-color:var(--blue);background:#f0f3ff}.reason-options input{width:auto}.reason-options span{font-weight:700}
+@media(max-width:850px){.close-service-card{grid-template-columns:1fr}}

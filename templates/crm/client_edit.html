@@ -1,0 +1,19 @@
+{% extends 'crm/base.html' %}
+{% block title %}Редактирование клиента · Avtoraqam CRM{% endblock %}
+{% block content %}
+<header><div><p class="eyebrow">Редактирование</p><h1>{{ client.full_name }}</h1><p>Измените данные, автомобили и файлы клиента.</p></div></header>
+<form method="post" enctype="multipart/form-data" class="form-card">{% csrf_token %}
+  <fieldset><legend><span>1</span> Данные клиента</legend><div class="form-grid">
+    {% for field in form %}<label class="{% if field.name == 'notes' or field.name == 'passport_files' %}wide{% endif %}"><span>{{ field.label }}</span>{{ field }}{% if field.errors %}<small class="error">{{ field.errors|striptags }}</small>{% endif %}</label>{% endfor %}
+  </div></fieldset>
+  {% if client.files.exists %}<fieldset><legend><span>2</span> Текущие файлы клиента</legend><div class="editable-files">
+    {% for item in client.files.all %}<div><a href="{{ item.file.url }}" target="_blank">{{ item.file.name }}</a><button type="submit" form="delete-client-file-{{ item.pk }}" class="delete-link">Удалить</button></div>{% endfor %}
+  </div></fieldset>{% endif %}
+  <fieldset><div class="vehicle-fieldset-heading"><legend><span>3</span> Автомобили</legend><button type="button" class="button secondary add-vehicle-row" id="add-vehicle-row">+ Добавить ещё автомобиль</button></div>{{ vehicles.management_form }}{% if vehicles.non_form_errors %}<div class="form-errors error">{{ vehicles.non_form_errors|striptags }}</div>{% endif %}
+    <div id="vehicle-formset-rows">{% for vehicle_form in vehicles %}<div class="vehicle-edit-row">{% for hidden in vehicle_form.hidden_fields %}{{ hidden }}{% endfor %}<label><span>Госномер</span>{{ vehicle_form.plate_number }}{{ vehicle_form.plate_number.errors }}</label><label><span>Марка и модель</span>{{ vehicle_form.make_model }}{{ vehicle_form.make_model.errors }}</label>{% if vehicle_form.instance.pk %}{% if vehicle_form.instance.services.exists %}<small class="protected-hint">Есть история услуг — удаление недоступно</small>{% else %}<label class="delete-check">{{ vehicle_form.DELETE }} Удалить автомобиль</label>{% endif %}{% endif %}</div>{% endfor %}</div>
+    <template id="empty-vehicle-form"><div class="vehicle-edit-row vehicle-new">{% for hidden in vehicles.empty_form.hidden_fields %}{{ hidden }}{% endfor %}<label><span>Госномер</span>{{ vehicles.empty_form.plate_number }}</label><label><span>Марка и модель</span>{{ vehicles.empty_form.make_model }}</label></div></template>
+  </fieldset>
+  <div class="form-actions"><a href="{% url 'crm:client_detail' client.pk %}">Отмена</a><button class="button" type="submit">Сохранить изменения</button></div>
+</form>
+{% for item in client.files.all %}<form id="delete-client-file-{{ item.pk }}" method="post" action="{% url 'crm:client_file_delete' item.pk %}" onsubmit="return confirm('Удалить этот файл?')">{% csrf_token %}</form>{% endfor %}
+{% endblock %}

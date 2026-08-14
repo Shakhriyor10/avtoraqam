@@ -1,0 +1,24 @@
+[Unit]
+Description=Avtoraqam CRM Gunicorn
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=notify
+User=avtoraqam
+Group=www-data
+WorkingDirectory=/var/www/avtoraqam
+EnvironmentFile=/var/www/avtoraqam/.env
+RuntimeDirectory=avtoraqam
+RuntimeDirectoryMode=0750
+UMask=0007
+ExecStart=/var/www/avtoraqam/.venv/bin/gunicorn --workers 3 --timeout 120 --bind unix:/run/avtoraqam/gunicorn.sock --access-logfile - --error-logfile - avtoraqam.wsgi:application
+ExecReload=/bin/kill -s HUP $MAINPID
+KillSignal=SIGQUIT
+TimeoutStopSec=30
+PrivateTmp=true
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,15 @@
+{% extends 'crm/base.html' %}
+{% block title %}Настройки уведомлений · Avtoraqam CRM{% endblock %}
+{% block content %}
+<header class="settings-header"><div><p class="eyebrow">Настройки CRM</p><h1>Сроки уведомлений</h1><p>Настройте индивидуальный период предупреждения для каждого типа услуги.</p></div><div class="settings-help"><span>i</span><p>Статус услуги и Telegram-уведомление включатся за указанное количество дней до окончания.</p></div></header>
+<form method="post" class="notification-settings">{% csrf_token %}
+  <div class="notification-grid">
+    {% for row in settings_rows %}<label class="notification-card {{ row.value }}">
+      <span class="notification-icon" aria-hidden="true">{% if row.value == 'insurance' %}✓{% elif row.value == 'tinting' %}◐{% elif row.value == 'power_of_attorney' %}✎{% else %}+{% endif %}</span>
+      <span class="notification-copy"><small>Уведомления</small><strong>{{ row.label }}</strong><em>Предупреждать до окончания срока</em></span>
+      <span class="days-control"><input type="number" name="days_{{ row.value }}" value="{{ row.days }}" min="0" max="365" required><b>дней</b></span>
+    </label>{% endfor %}
+  </div>
+  <div class="settings-footer"><div><strong>Изменения применяются сразу</strong><span>К статусам в CRM и следующим сообщениям Telegram-бота</span></div><div class="form-actions"><a href="{% url 'crm:dashboard' %}">Отмена</a><button class="button" type="submit">Сохранить настройки</button></div></div>
+</form>
+{% endblock %}

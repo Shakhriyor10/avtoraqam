@@ -1,0 +1,6 @@
+{% extends 'crm/base.html' %}
+{% block title %}Закрыть предупреждение · Avtoraqam CRM{% endblock %}
+{% block content %}
+<header><div><p class="eyebrow">Управление предупреждением</p><h1>Закрыть услугу</h1><p>Запись останется в истории, но больше не будет отображаться в предупреждениях и Telegram.</p></div></header>
+<section class="close-service-card"><div class="close-service-summary"><span class="badge {{ service.status }}">{{ service.status_label }}</span><h2>{{ service.get_service_type_display }}</h2><p>{{ service.client.full_name }} · {{ service.client.phone }}</p><strong>{{ service.vehicle.plate_number }} · до {{ service.expires_on|date:'d.m.Y' }}</strong></div><form method="post">{% csrf_token %}<h3>Почему закрываем предупреждение?</h3><div class="reason-options">{% for value, label in close_reasons %}<label><input type="radio" name="reason" value="{{ value }}" required><span>{{ label }}</span></label>{% endfor %}</div><div class="form-actions"><a href="{% if request.GET.next == 'dashboard' %}{% url 'crm:dashboard' %}{% else %}{% url 'crm:client_detail' service.client_id %}{% endif %}">Отмена</a><button class="button" type="submit">Закрыть предупреждение</button></div></form></section>
+{% endblock %}

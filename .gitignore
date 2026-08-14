@@ -11,6 +11,7 @@ local_settings.py
 db.sqlite3
 db.sqlite3-journal
 media
+staticfiles/
 
 # If your build process includes running collectstatic, then you probably don't need or want to include staticfiles/
 # in your Git repository. Update and uncomment the following line accordingly.
@@ -43,7 +44,7 @@ share/python-wheels/
 *.egg
 MANIFEST
 
-**/migrations/*
+# Django migration files are part of the application and must be committed.
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -168,6 +169,7 @@ Thumbs.db
 
 # User-specific stuff
 .idea/**/workspace.xml
+.idea/
 .idea/**/tasks.xml
 .idea/**/usage.statistics.xml
 .idea/**/dictionaries

@@ -1,0 +1,52 @@
+{% extends 'crm/base.html' %}
+{% block title %}Обзор · Avtoraqam CRM{% endblock %}
+{% block content %}
+<header><div><h1>Добро пожаловать, {{ request.user.first_name|default:request.user.username }}</h1></div></header>
+
+<section class="stats">
+  <div><span>Добавлено клиентов</span><strong id="stat-clients">{{ client_count }}</strong></div>
+  <div><span>Добавлено автомобилей</span><strong id="stat-vehicles">{{ vehicle_count }}</strong></div>
+  <div class="services-total"><span>Добавлено услуг</span><strong id="stat-services">{{ service_count }}</strong></div>
+  <div class="warning"><span>Скоро истекают</span><strong id="stat-warning">{{ warning_count }}</strong></div>
+  <div class="danger"><span>Просрочены</span><strong id="stat-expired">{{ expired_count }}</strong></div>
+</section>
+
+<div class="section-title"><div><h2>Создать документ</h2></div></div>
+<section class="service-grid">
+  {% for value, label in service_types %}
+  <a class="service-card {{ value }}" href="{% url 'crm:service_create' value %}">
+    <span class="service-art" aria-hidden="true">
+      {% if value == 'insurance' %}
+      <svg viewBox="0 0 64 64"><path d="M32 6 52 14v16c0 13-8 23-20 29C20 53 12 43 12 30V14Z"/><path d="m22 32 7 7 14-16"/></svg>
+      {% elif value == 'tinting' %}
+      <svg viewBox="0 0 64 64"><path d="M10 40h44l-6-18a7 7 0 0 0-7-5H23a7 7 0 0 0-7 5Z"/><path d="M18 40v7m28-7v7M14 32h36M24 17l-6 15m22-15 6 15"/><circle cx="20" cy="42" r="4"/><circle cx="44" cy="42" r="4"/></svg>
+      {% elif value == 'power_of_attorney' %}
+      <svg viewBox="0 0 64 64"><path d="M17 7h24l8 8v42H17Z"/><path d="M41 7v10h8M24 27h18M24 35h18M24 43h10"/><path d="m39 49 10-10 5 5-10 10-7 2Z"/></svg>
+      {% else %}
+      <svg viewBox="0 0 64 64"><rect x="9" y="13" width="46" height="38" rx="7"/><path d="M21 13V9m22 4V9M9 25h46M32 32v13M25 38h14"/></svg>
+      {% endif %}
+    </span>
+    <div class="service-copy"><span>Новая услуга</span><h3>{{ label }}</h3><p>Оформить документ клиенту</p></div>
+    <b class="service-arrow">→</b>
+  </a>
+  {% endfor %}
+</section>
+
+<div class="section-title"><div><h2>Все клиенты и услуги</h2></div><span id="registry-count"></span></div>
+<form class="registry-filters" id="registry-filters" method="get" data-search-url="{% url 'crm:service_search' %}">
+  <label class="registry-search"><span>Поиск</span><input type="search" name="q" value="{{ search_query }}" placeholder="Имя, телефон, госномер или услуга"></label>
+  <label><span>Статус</span><select name="status"><option value="">Все статусы</option><option value="warning" {% if status_filter == 'warning' %}selected{% endif %}>Скоро истекают</option><option value="expired" {% if status_filter == 'expired' %}selected{% endif %}>Просрочены</option><option value="active" {% if status_filter == 'active' %}selected{% endif %}>Активные</option><option value="renewed" {% if status_filter == 'renewed' %}selected{% endif %}>Продлённые</option><option value="closed" {% if status_filter == 'closed' %}selected{% endif %}>Закрытые</option></select></label>
+  <div class="date-range"><label><span>Срок от</span><input type="date" name="date_from" value="{{ date_from }}"></label><span class="date-separator">—</span><label><span>Срок до</span><input type="date" name="date_to" value="{{ date_to }}"></label></div>
+  <a class="filter-reset" href="{% url 'crm:dashboard' %}">Сбросить</a>
+</form>
+<section class="table-card registry-table">
+  <table><thead><tr><th>Клиент</th><th>Автомобиль</th><th>Услуга</th><th>Срок</th><th>Статус</th><th></th></tr></thead><tbody id="service-results">
+  {% for service in services %}<tr><td><a href="{% url 'crm:client_detail' service.client_id %}"><strong>{{ service.client.full_name }}</strong><small>{{ service.client.phone }}</small></a></td><td>{{ service.vehicle.plate_number }}</td><td>{{ service.get_service_type_display }}</td><td>{{ service.expires_on|date:'d.m.Y' }}</td><td><span class="badge {{ service.status }}">{{ service.status_label }}</span></td><td><div class="row-actions">{% if service.status == 'warning' or service.status == 'expired' %}<a class="renew-service-link" href="{% url 'crm:service_create' service.service_type %}?renew={{ service.pk }}">Продлить</a><a class="close-service-link" data-service="{{ service.get_service_type_display }}" data-client="{{ service.client.full_name }}" data-vehicle="{{ service.vehicle.plate_number }}" href="{% url 'crm:service_close' service.pk %}?next=dashboard">Закрыть</a>{% endif %}<button type="button" class="delete-service-link" data-service="{{ service.get_service_type_display }}" data-client="{{ service.client.full_name }}" data-vehicle="{{ service.vehicle.plate_number }}" data-delete-url="{% url 'crm:service_delete' service.pk %}" aria-label="Удалить услугу" title="Удалить услугу"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 4v5m4-5v5"/></svg></button></div></td></tr>{% empty %}<tr><td colspan="6" class="empty">Услуги не найдены.</td></tr>{% endfor %}
+  </tbody></table>
+</section>
+{% if page_obj and page_obj.paginator.num_pages > 1 %}<nav class="pagination">
+  {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}&status={{ status_filter }}&date_from={{ date_from }}&date_to={{ date_to }}">← Назад</a>{% endif %}
+  <span>Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
+  {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}&status={{ status_filter }}&date_from={{ date_from }}&date_to={{ date_to }}">Вперёд →</a>{% endif %}
+</nav>{% endif %}
+{% endblock %}

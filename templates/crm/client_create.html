@@ -1,0 +1,11 @@
+{% extends 'crm/base.html' %}
+{% block title %}Новый клиент · Avtoraqam CRM{% endblock %}
+{% block content %}
+<header><div><p class="eyebrow">База клиентов</p><h1>Добавить клиента</h1><p>После сохранения откроется карточка клиента для добавления автомобиля.</p></div></header>
+<form method="post" enctype="multipart/form-data" class="form-card">{% csrf_token %}
+  <fieldset><legend><span>1</span> Данные клиента</legend><div class="form-grid">
+    {% for field in form %}<label class="{% if field.name == 'notes' or field.name == 'passport_files' %}wide{% endif %}"><span>{{ field.label }}</span>{{ field }}{% if field.errors %}<small class="error">{{ field.errors|striptags }}</small>{% endif %}</label>{% endfor %}
+  </div></fieldset>
+  <div class="form-actions"><a href="{% url 'crm:client_list' %}">Отмена</a><button class="button" type="submit">Добавить клиента</button></div>
+</form>
+{% endblock %}

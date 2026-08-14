@@ -36,7 +36,7 @@ class ServiceRecordAdmin(admin.ModelAdmin):
 
 @admin.register(Vehicle)
 class VehicleAdmin(admin.ModelAdmin):
-    list_display = ('plate_number', 'client', 'make_model')
+    list_display = ('plate_number', 'client')
     search_fields = ('plate_number', 'client__full_name', 'client__phone')
 
 

@@ -19,8 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('no-client-vehicles')?.remove();
       const row = document.createElement('div'); row.className = 'vehicle vehicle-new';
       const plate = document.createElement('strong'); plate.textContent = data.plate_number;
-      const model = document.createElement('span'); model.textContent = data.make_model;
-      row.append(plate, model); list.prepend(row); close();
+      row.append(plate); list.prepend(row); close();
     } finally { submit.disabled = false; }
   });
 });

@@ -12,7 +12,10 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.dateparse import parse_date
 
-from .forms import ClientForm, ServiceCreateForm, ServiceEditForm, VehicleForm, VehicleFormSet
+from .forms import (
+    AdditionalServiceFormSet, ClientForm, ServiceCreateForm, ServiceEditForm,
+    VehicleForm, VehicleFormSet,
+)
 from .models import Client, ClientFile, ServiceFile, ServiceNotificationSetting, ServiceRecord, Vehicle
 
 
@@ -261,7 +264,6 @@ def client_vehicles(request, pk):
         'client': client.full_name,
         'vehicles': [{
             'plate_number': vehicle.plate_number,
-            'make_model': vehicle.make_model or 'Марка и модель не указаны',
         } for vehicle in client.vehicles.order_by('-created_at')],
     })
 
@@ -339,7 +341,7 @@ def vehicle_create(request, client_pk):
             vehicle.save()
             messages.success(request, f'Автомобиль {vehicle.plate_number} добавлен клиенту.')
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return JsonResponse({'ok': True, 'plate_number': vehicle.plate_number, 'make_model': vehicle.make_model or 'Марка не указана'})
+                return JsonResponse({'ok': True, 'plate_number': vehicle.plate_number})
             return redirect('crm:client_detail', pk=client.pk)
     if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return JsonResponse({'ok': False, 'errors': {name: [str(error) for error in errors] for name, errors in form.errors.items()}}, status=400)
@@ -465,7 +467,28 @@ def service_create(request, service_type):
     if client_id and not renewing_service:
         initial['existing_client'] = Client.objects.filter(pk=client_id).first()
     form = ServiceCreateForm(request.POST or None, request.FILES or None, initial=initial)
-    if request.method == 'POST' and form.is_valid():
+    additional_types = [item for item in ServiceRecord.ServiceType.choices if item[0] != service_type]
+    additional_initial = [{'service_type': value} for value, _label in additional_types]
+    additional_services = AdditionalServiceFormSet(
+        request.POST or None, request.FILES or None, prefix='additional', initial=additional_initial,
+    )
+    additional_posted = 'additional-TOTAL_FORMS' in request.POST
+    additional_valid = bool(renewing_service) or not additional_posted or additional_services.is_valid()
+    if request.method == 'POST' and form.is_valid() and additional_valid:
+        issued_on = form.cleaned_data['issued_on']
+        invalid_extra_expiry = False
+        for extra_form in ([] if renewing_service or not additional_posted else additional_services):
+            if not extra_form.cleaned_data.get('enabled'):
+                continue
+            expires_on = extra_form.cleaned_data.get('expires_on')
+            if expires_on and expires_on < issued_on:
+                extra_form.add_error('expires_on', 'Дата окончания не может быть раньше даты оформления.')
+                invalid_extra_expiry = True
+        if invalid_extra_expiry:
+            return _render_service_create(
+                request, form, additional_services, service_type, valid_types,
+                vehicle_owners=None, renewing_service=renewing_service,
+            )
         client = form.cleaned_data['existing_client']
         if not client:
             client = Client.objects.create(
@@ -479,27 +502,58 @@ def service_create(request, service_type):
             vehicle, _ = Vehicle.objects.get_or_create(
                 client=client,
                 plate_number=''.join(form.cleaned_data['plate_number'].upper().split()),
-                defaults={'make_model': form.cleaned_data['make_model']},
             )
-        service = ServiceRecord.objects.create(
-            client=client, vehicle=vehicle, service_type=service_type,
-            issued_on=form.cleaned_data['issued_on'],
-            expires_on=form.cleaned_data['expires_on'], price=form.cleaned_data['price'],
-            notes=form.cleaned_data['notes'], created_by=request.user,
-        )
-        ServiceRecord.objects.select_for_update().filter(
-            vehicle=vehicle, service_type=service_type, renewed_by__isnull=True,
-            closed_at__isnull=True,
-        ).exclude(pk=service.pk).update(renewed_by=service)
-        for uploaded in request.FILES.getlist('service_files'):
-            ServiceFile.objects.create(service=service, file=uploaded)
-        messages.success(request, f'{valid_types[service_type]} для {client.full_name} успешно создана.')
+        services_to_create = [{
+            'service_type': service_type,
+            'expires_on': form.cleaned_data['expires_on'],
+            'price': form.cleaned_data['price'],
+            'notes': form.cleaned_data['notes'],
+            'files': request.FILES.getlist('service_files'),
+        }]
+        for index, extra_form in enumerate([] if renewing_service or not additional_posted else additional_services):
+            if extra_form.cleaned_data.get('enabled'):
+                services_to_create.append({
+                    'service_type': extra_form.cleaned_data['service_type'],
+                    'expires_on': extra_form.cleaned_data['expires_on'],
+                    'price': extra_form.cleaned_data['price'],
+                    'notes': '',
+                    'files': request.FILES.getlist(f'additional-{index}-service_files'),
+                })
+        for service_data in services_to_create:
+            attached_files = service_data.pop('files')
+            service = ServiceRecord.objects.create(
+                client=client, vehicle=vehicle, issued_on=issued_on,
+                created_by=request.user, **service_data,
+            )
+            ServiceRecord.objects.select_for_update().filter(
+                vehicle=vehicle, service_type=service.service_type, renewed_by__isnull=True,
+                closed_at__isnull=True,
+            ).exclude(pk=service.pk).update(renewed_by=service)
+            for uploaded in attached_files:
+                ServiceFile.objects.create(service=service, file=uploaded)
+        messages.success(request, f'Создано услуг: {len(services_to_create)}. Клиент: {client.full_name}.')
         return redirect('crm:client_detail', pk=client.pk)
-    vehicle_owners = {
-        str(vehicle.pk): vehicle.client_id
-        for vehicle in Vehicle.objects.only('pk', 'client_id')
-    }
+    return _render_service_create(
+        request, form, additional_services, service_type, valid_types,
+        vehicle_owners=None, renewing_service=renewing_service,
+    )
+
+
+def _render_service_create(
+    request, form, additional_services, service_type, valid_types,
+    vehicle_owners=None, renewing_service=None,
+):
+    vehicles = list(Vehicle.objects.select_related('client').only('pk', 'client_id', 'plate_number'))
+    vehicle_owners = vehicle_owners or {str(vehicle.pk): vehicle.client_id for vehicle in vehicles}
+    client_vehicles = {}
+    for vehicle in vehicles:
+        client_vehicles.setdefault(str(vehicle.client_id), []).append({
+            'id': str(vehicle.pk), 'plate': vehicle.plate_number,
+        })
     return render(request, 'crm/service_form.html', {
         'form': form, 'service_type': service_type, 'service_name': valid_types[service_type],
-        'vehicle_owners': vehicle_owners, 'renewing_service': renewing_service,
+        'vehicle_owners': vehicle_owners, 'client_vehicles': client_vehicles,
+        'additional_services': additional_services,
+        'additional_type_labels': dict(ServiceRecord.ServiceType.choices),
+        'renewing_service': renewing_service,
     })

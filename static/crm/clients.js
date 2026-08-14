@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = await response.json();
         modalTitle.textContent = data.client;
         modalList.innerHTML = data.vehicles.map(vehicle => `
-          <div class="modal-vehicle"><span class="plate-number">${escapeHtml(vehicle.plate_number)}</span><strong>${escapeHtml(vehicle.make_model)}</strong></div>
+          <div class="modal-vehicle"><span class="plate-number">${escapeHtml(vehicle.plate_number)}</span></div>
         `).join('');
         modal.hidden = false;
         document.body.classList.add('modal-open');

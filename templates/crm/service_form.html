@@ -2,11 +2,35 @@
 {% block title %}Новая услуга · Avtoraqam CRM{% endblock %}
 {% block content %}
 <header><div><h1>{{ service_name }}</h1></div></header>
-<form method="post" enctype="multipart/form-data" class="form-card">{% csrf_token %}
+<form method="post" enctype="multipart/form-data" class="form-card service-create-card">{% csrf_token %}
   {% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors }}</div>{% endif %}
+  {% if additional_services.non_form_errors %}<div class="form-errors">{{ additional_services.non_form_errors }}</div>{% endif %}
   {% if renewing_service %}<div class="message">Продление услуги: {{ renewing_service.client.full_name }} · {{ renewing_service.vehicle.plate_number }}. Клиент и автомобиль уже выбраны.</div>{% endif %}
-  <fieldset><legend><span>1</span> Клиент</legend><div class="form-grid">{% for field in form %}{% if field.name == 'existing_vehicle' %}</div></fieldset><fieldset><legend><span>2</span> Автомобиль</legend><div class="form-grid">{% endif %}{% if field.name == 'issued_on' %}</div></fieldset><fieldset><legend><span>3</span> Документ и срок</legend><div class="form-grid">{% endif %}<label class="{% if field.name == 'notes' or field.name == 'passport_files' or field.name == 'service_files' %}wide{% endif %}"><span>{{ field.label }}</span>{{ field }}{% if field.errors %}<small class="error">{{ field.errors|striptags }}</small>{% endif %}</label>{% endfor %}</div></fieldset>
-  <div class="form-actions"><a href="{% url 'crm:dashboard' %}">Отмена</a><button class="button" type="submit">Сохранить услугу</button></div>
+  <fieldset><legend><span>1</span> Клиент</legend><div class="form-grid">
+    {% for field in form %}{% if field.name == 'existing_vehicle' %}</div></fieldset><fieldset><legend><span>2</span> Автомобиль</legend><div class="form-grid">{% endif %}{% if field.name == 'issued_on' %}</div></fieldset><fieldset><legend><span>3</span> Основная услуга — {{ service_name }}</legend><div class="form-grid">{% endif %}<label class="{% if field.name == 'notes' or field.name == 'passport_files' or field.name == 'service_files' %}wide{% endif %}"><span>{{ field.label }}</span>{{ field }}{% if field.errors %}<small class="error">{{ field.errors|striptags }}</small>{% endif %}</label>{% endfor %}
+  </div></fieldset>
+  {% if not renewing_service %}
+  <fieldset class="additional-services"><legend><span>4</span> Добавить другие услуги</legend>
+    <p class="field-help">Можно сразу оформить несколько услуг. У каждой будет собственная стоимость, срок и документы.</p>
+    {{ additional_services.management_form }}
+    <div class="additional-service-grid">
+      {% for extra in additional_services %}
+      <section class="additional-service-card" data-additional-service>
+        {{ extra.service_type }}
+        <label class="additional-toggle">{{ extra.enabled }} <strong data-service-label></strong></label>
+        <div class="additional-service-fields">
+          <label><span>{{ extra.expires_on.label }}</span>{{ extra.expires_on }}{% if extra.expires_on.errors %}<small class="error">{{ extra.expires_on.errors|striptags }}</small>{% endif %}</label>
+          <label><span>{{ extra.price.label }}</span>{{ extra.price }}{% if extra.price.errors %}<small class="error">{{ extra.price.errors|striptags }}</small>{% endif %}</label>
+          <label class="wide"><span>{{ extra.service_files.label }}</span>{{ extra.service_files }}{% if extra.service_files.errors %}<small class="error">{{ extra.service_files.errors|striptags }}</small>{% endif %}</label>
+        </div>
+      </section>
+      {% endfor %}
+    </div>
+  </fieldset>
+  {% endif %}
+  <div class="form-actions"><a href="{% url 'crm:dashboard' %}">Отмена</a><button class="button" type="submit">Сохранить услуги</button></div>
 </form>
 {{ vehicle_owners|json_script:"vehicle-owners" }}
+{{ client_vehicles|json_script:"client-vehicles" }}
+{{ additional_type_labels|json_script:"additional-type-labels" }}
 {% endblock %}

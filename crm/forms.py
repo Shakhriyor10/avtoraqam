@@ -1,5 +1,5 @@
 from django import forms
-from django.forms import BaseInlineFormSet, inlineformset_factory
+from django.forms import BaseFormSet, BaseInlineFormSet, formset_factory, inlineformset_factory
 
 from .models import Client, ServiceRecord, Vehicle
 
@@ -52,7 +52,6 @@ class ServiceCreateForm(forms.Form):
         required=False, empty_label='Добавить новый автомобиль'
     )
     plate_number = forms.CharField(label='Госномер автомобиля', max_length=24, required=False)
-    make_model = forms.CharField(label='Марка и модель', max_length=120, required=False)
     issued_on = forms.DateField(
         label='Дата оформления',
         input_formats=['%Y-%m-%d'],
@@ -108,7 +107,7 @@ class ClientForm(forms.ModelForm):
 class VehicleForm(forms.ModelForm):
     class Meta:
         model = Vehicle
-        fields = ['plate_number', 'make_model']
+        fields = ['plate_number']
 
     def clean_plate_number(self):
         return ''.join(self.cleaned_data['plate_number'].upper().split())
@@ -132,6 +131,41 @@ class VehicleInlineFormSet(BaseInlineFormSet):
 VehicleFormSet = inlineformset_factory(
     Client, Vehicle, form=VehicleForm, formset=VehicleInlineFormSet,
     extra=1, can_delete=True
+)
+
+
+class AdditionalServiceForm(forms.Form):
+    service_type = forms.ChoiceField(choices=ServiceRecord.ServiceType.choices, widget=forms.HiddenInput)
+    enabled = forms.BooleanField(label='Добавить эту услугу', required=False)
+    expires_on = forms.DateField(
+        label='Действует до', required=False, input_formats=['%Y-%m-%d'],
+        widget=forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date'}),
+    )
+    price = MoneyField(label='Стоимость, сум', max_digits=12, decimal_places=2, required=False)
+    service_files = MultipleFileField(
+        label='Документы услуги — до 3 файлов', required=False, max_files=3
+    )
+
+    def clean(self):
+        data = super().clean()
+        if data.get('enabled') and not data.get('expires_on'):
+            self.add_error('expires_on', 'Укажите срок действия услуги.')
+        return data
+
+
+class AdditionalServiceBaseFormSet(BaseFormSet):
+    def clean(self):
+        super().clean()
+        selected = [
+            form.cleaned_data.get('service_type') for form in self.forms
+            if form.cleaned_data and form.cleaned_data.get('enabled')
+        ]
+        if len(selected) != len(set(selected)):
+            raise forms.ValidationError('Одна и та же услуга выбрана несколько раз.')
+
+
+AdditionalServiceFormSet = formset_factory(
+    AdditionalServiceForm, formset=AdditionalServiceBaseFormSet, extra=0
 )
 
 

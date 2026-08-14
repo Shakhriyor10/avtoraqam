@@ -54,7 +54,7 @@ class CrmFlowTests(TestCase):
         today = timezone.localdate()
         response = self.client.post(reverse('crm:service_create', args=['insurance']), {
             'full_name': 'Алишер Тестов', 'phone': '+998901234567',
-            'plate_number': '01 A 777 AA', 'make_model': 'Chevrolet Cobalt',
+            'plate_number': '01 A 777 AA',
             'issued_on': today, 'expires_on': today + timedelta(days=365),
             'price': '250000', 'notes': 'Тестовая запись',
         })
@@ -84,7 +84,7 @@ class CrmFlowTests(TestCase):
             'vehicles-TOTAL_FORMS': '1', 'vehicles-INITIAL_FORMS': '1',
             'vehicles-MIN_NUM_FORMS': '0', 'vehicles-MAX_NUM_FORMS': '1000',
             'vehicles-0-id': vehicle.pk, 'vehicles-0-client': client.pk,
-            'vehicles-0-plate_number': '01NEW', 'vehicles-0-make_model': 'Cobalt',
+            'vehicles-0-plate_number': '01NEW',
         })
         self.assertEqual(response.status_code, 302)
         client.refresh_from_db()
@@ -104,15 +104,14 @@ class CrmFlowTests(TestCase):
     def test_vehicle_can_be_added_from_client_detail(self):
         client = Client.objects.create(full_name='Владелец', phone='99890')
         response = self.client.post(reverse('crm:vehicle_create', args=[client.pk]), {
-            'plate_number': '01 A 123 BC', 'make_model': 'Chevrolet Onix',
+            'plate_number': '01 A 123 BC',
         })
         self.assertRedirects(response, reverse('crm:client_detail', args=[client.pk]))
         vehicle = client.vehicles.get()
         self.assertEqual(vehicle.plate_number, '01A123BC')
-        self.assertEqual(vehicle.make_model, 'Chevrolet Onix')
         response = self.client.post(
             reverse('crm:vehicle_create', args=[client.pk]),
-            {'plate_number': '01 B 456 DE', 'make_model': 'Onix'},
+            {'plate_number': '01 B 456 DE'},
             HTTP_X_REQUESTED_WITH='XMLHttpRequest',
         )
         self.assertEqual(response.status_code, 200)
@@ -334,11 +333,8 @@ class CrmFlowTests(TestCase):
             'vehicles-MIN_NUM_FORMS': '0',
             'vehicles-MAX_NUM_FORMS': '1000',
             'vehicles-0-plate_number': '01AAA01',
-            'vehicles-0-make_model': 'Cobalt',
             'vehicles-1-plate_number': '01BBB02',
-            'vehicles-1-make_model': 'Gentra',
             'vehicles-2-plate_number': '01CCC03',
-            'vehicles-2-make_model': 'Onix',
         })
         self.assertRedirects(response, reverse('crm:client_detail', args=[owner.pk]))
         self.assertEqual(owner.vehicles.count(), 3)
@@ -454,8 +450,8 @@ class CrmFlowTests(TestCase):
 
     def test_client_vehicles_endpoint_returns_all_cars(self):
         owner = Client.objects.create(full_name='Два Авто', phone='2020')
-        Vehicle.objects.create(client=owner, plate_number='01ONE', make_model='Cobalt')
-        Vehicle.objects.create(client=owner, plate_number='01TWO', make_model='Onix')
+        Vehicle.objects.create(client=owner, plate_number='01ONE')
+        Vehicle.objects.create(client=owner, plate_number='01TWO')
         response = self.client.get(reverse('crm:client_vehicles', args=[owner.pk]))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()['vehicles']), 2)
@@ -543,7 +539,6 @@ class CrmFlowTests(TestCase):
             'vehicles-0-id': vehicle.pk,
             'vehicles-0-client': owner.pk,
             'vehicles-0-plate_number': vehicle.plate_number,
-            'vehicles-0-make_model': '',
             'vehicles-0-DELETE': 'on',
         })
         self.assertEqual(response.status_code, 200)
@@ -572,3 +567,40 @@ class CrmFlowTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(owner.files.count(), 3)
         self.assertFalse(owner.services.exists())
+
+    def test_multiple_service_types_can_be_created_in_one_request(self):
+        owner = Client.objects.create(full_name='Мульти клиент', phone='998900000001')
+        vehicle = Vehicle.objects.create(client=owner, plate_number='01MULTI')
+        today = timezone.localdate()
+        response = self.client.post(reverse('crm:service_create', args=['insurance']), {
+            'existing_client': owner.pk,
+            'existing_vehicle': vehicle.pk,
+            'issued_on': today,
+            'expires_on': today + timedelta(days=365),
+            'price': '500 000',
+            'additional-TOTAL_FORMS': '3',
+            'additional-INITIAL_FORMS': '3',
+            'additional-MIN_NUM_FORMS': '0',
+            'additional-MAX_NUM_FORMS': '1000',
+            'additional-0-service_type': 'tinting',
+            'additional-0-enabled': 'on',
+            'additional-0-expires_on': today + timedelta(days=180),
+            'additional-0-price': '300 000',
+            'additional-1-service_type': 'power_of_attorney',
+            'additional-2-service_type': 'other',
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(owner.services.count(), 2)
+        self.assertEqual(
+            set(owner.services.values_list('service_type', flat=True)),
+            {'insurance', 'tinting'},
+        )
+        self.assertEqual(owner.services.get(service_type='tinting').price, 300000)
+
+    def test_client_search_data_contains_vehicle_plate(self):
+        owner = Client.objects.create(full_name='Поиск по номеру', phone='998900000002')
+        vehicle = Vehicle.objects.create(client=owner, plate_number='01SEARCH')
+        response = self.client.get(reverse('crm:service_create', args=['insurance']))
+        self.assertContains(response, 'client-vehicles')
+        self.assertContains(response, vehicle.plate_number)
+        self.assertNotContains(response, 'id_make_model')

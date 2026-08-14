@@ -33,7 +33,6 @@ class ClientFile(models.Model):
 class Vehicle(models.Model):
     client = models.ForeignKey(Client, related_name='vehicles', on_delete=models.CASCADE)
     plate_number = models.CharField('Госномер', max_length=24, db_index=True)
-    make_model = models.CharField('Марка и модель', max_length=120, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

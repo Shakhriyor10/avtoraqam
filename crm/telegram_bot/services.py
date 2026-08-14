@@ -56,7 +56,7 @@ def notification_text(service):
     client_name = escape(service.client.full_name)
     phone = escape(service.client.phone)
     plate_number = escape(service.vehicle.plate_number)
-    vehicle_name = f' · {escape(service.vehicle.make_model)}' if service.vehicle.make_model else ''
+    vehicle_name = ''
     return (
         '⚠️ <b>СРОК УСЛУГИ ПОДХОДИТ К КОНЦУ</b>\n\n'
         f'<b>Услуга:</b> {service_name}\n'

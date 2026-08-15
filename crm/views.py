@@ -203,7 +203,7 @@ def service_search(request):
             'client_url': reverse('crm:client_detail', args=[item.client_id]),
             'vehicle': item.vehicle.plate_number,
             'service': item.get_service_type_display(),
-            'expires_on': item.expires_on.strftime('%d.%m.%Y'),
+            'expires_on': item.expires_on.strftime('%d.%m.%Y') if item.expires_on else 'Без срока',
             'status': item.status,
             'status_label': item.status_label,
             'close_url': reverse('crm:service_close', args=[item.pk]) + '?next=dashboard',

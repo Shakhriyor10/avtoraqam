@@ -36,7 +36,7 @@ def dashboard_counts():
     services = ServiceRecord.objects.filter(renewed_by__isnull=True, closed_at__isnull=True)
     warning_days = warning_days_map()
     warning = expired = 0
-    for service in services:
+    for service in services.exclude(expires_on__isnull=True):
         if service.days_left < 0:
             expired += 1
         elif service.days_left <= warning_days[service.service_type]:

@@ -131,3 +131,21 @@ document.addEventListener('DOMContentLoaded', () => {
   if (clientSelect.value && vehicleSelect.value) preferredVehicle = vehicleSelect.value;
   syncClient();
 });
+
+window.openCrmModal = modal => {
+  if (!modal) return;
+  modal.classList.remove('is-closing');
+  modal.hidden = false;
+  document.body.classList.add('modal-open');
+};
+
+window.closeCrmModal = (modal, afterClose) => {
+  if (!modal || modal.hidden || modal.classList.contains('is-closing')) return;
+  modal.classList.add('is-closing');
+  window.setTimeout(() => {
+    modal.hidden = true;
+    modal.classList.remove('is-closing');
+    document.body.classList.remove('modal-open');
+    afterClose?.();
+  }, 180);
+};

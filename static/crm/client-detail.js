@@ -4,8 +4,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('vehicle-create-form');
   const list = document.getElementById('client-vehicle-list');
   if (!opener || !modal || !form || !list) return;
-  const close = () => { modal.hidden = true; document.body.classList.remove('modal-open'); };
-  opener.addEventListener('click', event => { event.preventDefault(); form.reset(); modal.hidden = false; document.body.classList.add('modal-open'); setTimeout(() => form.elements.plate_number.focus(), 0); });
+  const close = () => window.closeCrmModal(modal);
+  opener.addEventListener('click', event => { event.preventDefault(); form.reset(); window.openCrmModal(modal); setTimeout(() => form.elements.plate_number.focus(), 0); });
   modal.addEventListener('click', event => { if (event.target.closest('[data-create-modal-close]')) close(); });
   document.addEventListener('keydown', event => { if (event.key === 'Escape' && !modal.hidden) close(); });
   form.addEventListener('submit', async event => {

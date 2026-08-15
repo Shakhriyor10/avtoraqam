@@ -6,3 +6,6 @@
 .login-brand::before{background:#41B9B8}
 .login-brand span{color:#8de0df}
 .login-card input:focus{outline-color:rgba(65,185,184,.18)}
+body,input,button{font-family:"Manrope","Segoe UI",Arial,sans-serif}
+.login-brand>*{animation:login-rise .55s cubic-bezier(.22,1,.36,1) both}.login-panel{animation:login-fade .45s ease both}.login-card{transition:transform .25s ease,box-shadow .25s ease}.login-card:hover{transform:translateY(-3px);box-shadow:0 25px 65px rgba(19,34,59,.14)}.login-card button{transition:transform .18s ease,box-shadow .18s ease}.login-card button:hover{transform:translateY(-2px);box-shadow:0 10px 25px rgba(65,185,184,.25)}.login-card button:active{transform:scale(.98)}
+@keyframes login-rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}@keyframes login-fade{from{opacity:0}to{opacity:1}}@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}

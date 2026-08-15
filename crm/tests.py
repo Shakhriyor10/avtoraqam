@@ -63,6 +63,21 @@ class CrmFlowTests(TestCase):
         self.assertTrue(Vehicle.objects.filter(plate_number='01A777AA').exists())
         self.assertEqual(ServiceRecord.objects.get().service_type, 'insurance')
 
+    def test_service_can_be_created_without_expiry_or_files(self):
+        response = self.client.post(reverse('crm:service_create', args=['avtoraqam']), {
+            'full_name': 'Клиент без срока', 'phone': '998901234567',
+            'plate_number': '01A777AA', 'issued_on': timezone.localdate(),
+            'expires_on': '', 'price': '', 'notes': '',
+            'document_recipient': 'owner',
+        })
+        self.assertEqual(response.status_code, 302)
+        service = ServiceRecord.objects.get()
+        self.assertIsNone(service.expires_on)
+        self.assertEqual(service.status, 'no_expiry')
+        self.assertEqual(service.status_label, 'Без срока')
+        self.assertFalse(service.client.files.exists())
+        self.assertFalse(service.files.exists())
+
     def test_expiry_status(self):
         client = Client.objects.create(full_name='Клиент', phone='123')
         vehicle = Vehicle.objects.create(client=client, plate_number='01X001XX')
@@ -398,7 +413,7 @@ class CrmFlowTests(TestCase):
         insurance.save(update_fields=['expires_on'])
         self.assertEqual(insurance.status, 'warning')
         response = self.client.post(reverse('crm:notification_settings'), {
-            'days_insurance': '7', 'days_tinting': '12',
+            'days_avtoraqam': '15', 'days_insurance': '7', 'days_tinting': '12',
             'days_power_of_attorney': '20', 'days_other': '5',
         })
         self.assertEqual(response.status_code, 302)

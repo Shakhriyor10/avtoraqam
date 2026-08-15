@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const error = document.getElementById('close-service-error');
   if (!modal || !form) return;
   let activeLink = null;
-  const close = () => { modal.hidden = true; document.body.classList.remove('modal-open'); activeLink = null; };
+  const close = () => window.closeCrmModal(modal, () => { activeLink = null; });
 
   document.addEventListener('click', event => {
     const link = event.target.closest('.close-service-link');
@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
       event.preventDefault(); activeLink = link; form.action = link.href; form.reset(); error.textContent = '';
       title.textContent = link.dataset.service || 'Закрыть услугу';
       summary.textContent = [link.dataset.client, link.dataset.vehicle].filter(Boolean).join(' · ');
-      modal.hidden = false; document.body.classList.add('modal-open');
+      window.openCrmModal(modal);
     }
     if (event.target.closest('[data-close-modal-dismiss]')) close();
   });

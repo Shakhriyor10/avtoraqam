@@ -84,3 +84,51 @@ input:disabled,select:disabled,textarea:disabled{background:#f1f3f6;color:#9ba5b
 .additional-service-card.enabled .additional-service-fields{opacity:1;pointer-events:auto}
 .additional-service-fields label{display:grid;gap:7px;font-size:12px;font-weight:700}
 @media(max-width:900px){.additional-service-grid{grid-template-columns:1fr}}
+.notification-card.avtoraqam .notification-icon{background:#fff0f2;color:#d12f45}
+
+/* Professional typography and restrained interface motion. */
+html{scroll-behavior:smooth}
+body,input,select,textarea,button{font-family:"Manrope","Segoe UI",Arial,sans-serif}
+body{font-feature-settings:"kern" 1,"liga" 1;text-rendering:optimizeLegibility}
+h1,h2,h3,strong,b{letter-spacing:-.025em}
+p,td,label,input,select,textarea{letter-spacing:-.008em}
+
+main>header,main>.message,main>.stats,main>.section-title,main>.service-grid,main>.table-card,main>form,main>.form-card,main>.profile-grid,main>.pagination{animation:ui-rise .42s cubic-bezier(.22,1,.36,1) both}
+main>.stats,main>.message{animation-delay:.04s}
+main>.section-title,main>.profile-grid,main>.form-card,main>form{animation-delay:.08s}
+main>.service-grid,main>.table-card{animation-delay:.12s}
+@keyframes ui-rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+.button,.logout-button,.modal-close,.vehicle-eye,.delete-service-link,.delete-client-link{transition:transform .18s ease,box-shadow .18s ease,background-color .18s ease,color .18s ease,border-color .18s ease}
+.button:hover{transform:translateY(-2px);box-shadow:0 9px 22px rgba(35,108,107,.2)}
+.button:active,.logout-button:active,.modal-close:active,.vehicle-eye:active,.delete-service-link:active,.delete-client-link:active{transform:scale(.96)}
+.button:disabled{opacity:.58;cursor:wait;transform:none;box-shadow:none}
+.sidebar nav a{transition:transform .18s ease,background-color .18s ease,color .18s ease}
+.sidebar nav a:hover{transform:translateX(4px)}
+.service-card{transition:transform .28s cubic-bezier(.22,1,.36,1),box-shadow .28s ease,border-color .28s ease}
+.service-card:active{transform:translateY(-1px) scale(.975)}
+.service-card .service-art{transition:transform .32s cubic-bezier(.22,1,.36,1)}
+.service-card:hover .service-art{transform:translateY(-3px) rotate(-2deg) scale(1.06)}
+.service-card:hover .service-arrow{transform:translateX(4px) scale(1.05)}
+.stats>div,.panel,.form-card,.additional-service-card,.notification-card{transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease}
+.stats>div:hover,.panel:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(23,32,51,.07)}
+tbody tr{transition:background-color .16s ease}
+tbody tr:hover{background:#f7fbfb}
+input,select,textarea{transition:border-color .18s ease,box-shadow .18s ease,background-color .18s ease}
+input:focus,select:focus,textarea:focus{box-shadow:0 0 0 4px rgba(65,185,184,.12)}
+.additional-service-fields{transition:opacity .22s ease,transform .22s ease}
+.additional-service-card:not(.enabled) .additional-service-fields{transform:translateY(-4px)}
+.message{animation:message-in .4s cubic-bezier(.22,1,.36,1) both}
+@keyframes message-in{from{opacity:0;transform:translateY(-8px) scale(.99)}to{opacity:1;transform:none}}
+
+.vehicle-modal:not([hidden]) .vehicle-modal-backdrop{animation:modal-backdrop-in .2s ease both}
+.vehicle-modal:not([hidden]) .vehicle-modal-dialog{animation:modal-dialog-in .26s cubic-bezier(.22,1,.36,1) both}
+.vehicle-modal.is-closing .vehicle-modal-backdrop{animation:modal-backdrop-out .18s ease both}
+.vehicle-modal.is-closing .vehicle-modal-dialog{animation:modal-dialog-out .18s ease both}
+@keyframes modal-backdrop-in{from{opacity:0}to{opacity:1}}
+@keyframes modal-backdrop-out{from{opacity:1}to{opacity:0}}
+@keyframes modal-dialog-in{from{opacity:0;transform:translateY(16px) scale(.965)}to{opacity:1;transform:none}}
+@keyframes modal-dialog-out{from{opacity:1;transform:none}to{opacity:0;transform:translateY(10px) scale(.975)}}
+.modal-close:hover{transform:rotate(6deg);background:#e7ecef}
+
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation-duration:.01ms!important;animation-delay:0ms!important;transition-duration:.01ms!important}}

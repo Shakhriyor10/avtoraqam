@@ -50,19 +50,16 @@ document.addEventListener('DOMContentLoaded', () => {
         modalList.innerHTML = data.vehicles.map(vehicle => `
           <div class="modal-vehicle"><span class="plate-number">${escapeHtml(vehicle.plate_number)}</span></div>
         `).join('');
-        modal.hidden = false;
-        document.body.classList.add('modal-open');
+        window.openCrmModal(modal);
       } catch (error) {}
     }
     if (event.target.closest('[data-modal-close]') && modal) {
-      modal.hidden = true;
-      document.body.classList.remove('modal-open');
+      window.closeCrmModal(modal);
     }
   });
   document.addEventListener('keydown', event => {
     if (event.key === 'Escape' && modal && !modal.hidden) {
-      modal.hidden = true;
-      document.body.classList.remove('modal-open');
+      window.closeCrmModal(modal);
     }
   });
 });

@@ -52,6 +52,7 @@ class Vehicle(models.Model):
 
 class ServiceRecord(models.Model):
     class ServiceType(models.TextChoices):
+        AVTORAQAM = 'avtoraqam', 'Avtoraqam'
         INSURANCE = 'insurance', 'Страховка'
         TINTING = 'tinting', 'Тонировка'
         POWER_OF_ATTORNEY = 'power_of_attorney', 'Доверенность'
@@ -64,23 +65,19 @@ class ServiceRecord(models.Model):
         OTHER = 'other', 'Другая причина'
 
     class DocumentRecipient(models.TextChoices):
-        OTA = 'ota', 'ОТА'
-        ONA = 'ona', 'ОНА'
-        ER = 'er', 'ЭР'
-        XOTIN = 'xotin', 'ХОТИН'
-        UGIL = 'ugil', 'УГИЛ'
-        QIZ = 'qiz', 'КИЗ'
-        AKA = 'aka', 'АКА'
-        UKA = 'uka', 'УКА'
-        OPA = 'opa', 'ОПА'
-        SINGIL = 'singil', 'СИНГИЛ'
+        OWNER = 'owner', 'Владелец авто'
+        FATHER = 'father', 'Отец'
+        MOTHER = 'mother', 'Мать'
+        HUSBAND = 'husband', 'Муж'
+        WIFE = 'wife', 'Жена'
+        BROTHER = 'brother', 'Брат'
 
     client = models.ForeignKey(Client, related_name='services', on_delete=models.CASCADE)
     vehicle = models.ForeignKey(Vehicle, related_name='services', on_delete=models.CASCADE)
     service_type = models.CharField('Тип услуги', max_length=32, choices=ServiceType.choices)
     title = models.CharField('Название', max_length=160, blank=True)
     issued_on = models.DateField('Дата оформления', default=timezone.localdate)
-    expires_on = models.DateField('Действует до')
+    expires_on = models.DateField('Действует до', null=True, blank=True)
     price = models.DecimalField('Стоимость', max_digits=12, decimal_places=2, null=True, blank=True)
     notes = models.TextField('Примечание', blank=True)
     document_recipient = models.CharField(
@@ -118,6 +115,8 @@ class ServiceRecord(models.Model):
 
     @property
     def days_left(self):
+        if self.expires_on is None:
+            return None
         return (self.expires_on - timezone.localdate()).days
 
     @property
@@ -126,6 +125,8 @@ class ServiceRecord(models.Model):
             return 'renewed'
         if self.closed_at:
             return 'closed'
+        if self.expires_on is None:
+            return 'no_expiry'
         if self.days_left < 0:
             return 'expired'
         warning_days = getattr(self, '_warning_days', None)
@@ -139,7 +140,8 @@ class ServiceRecord(models.Model):
     def status_label(self):
         return {
             'expired': 'Истекла', 'warning': 'Скоро истекает',
-            'active': 'Активна', 'renewed': 'Продлена', 'closed': 'Закрыта',
+            'active': 'Активна', 'no_expiry': 'Без срока',
+            'renewed': 'Продлена', 'closed': 'Закрыта',
         }[self.status]
 
     def __str__(self):

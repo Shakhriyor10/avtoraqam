@@ -6,9 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!modal || !form) return;
   let activeButton = null;
   const close = () => {
-    modal.hidden = true;
-    document.body.classList.remove('modal-open');
-    activeButton = null;
+    window.closeCrmModal(modal, () => { activeButton = null; });
   };
   document.addEventListener('click', event => {
     const button = event.target.closest('.delete-client-link');
@@ -18,8 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
       form.reset();
       error.textContent = '';
       summary.textContent = button.dataset.client || '';
-      modal.hidden = false;
-      document.body.classList.add('modal-open');
+      window.openCrmModal(modal);
       setTimeout(() => form.elements.password.focus(), 0);
     }
     if (event.target.closest('[data-delete-client-dismiss]')) close();

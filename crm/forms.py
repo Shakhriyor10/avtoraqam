@@ -45,7 +45,7 @@ class ServiceCreateForm(forms.Form):
     full_name = forms.CharField(label='ФИО нового клиента', max_length=255, required=False)
     phone = forms.CharField(label='Номер телефона', max_length=32, required=False)
     passport_files = MultipleFileField(
-        label='Паспорт клиента — до 3 файлов', required=False, max_files=3
+        label='Паспорт клиента — необязательно, до 3 файлов', required=False, max_files=3
     )
     existing_vehicle = forms.ModelChoiceField(
         label='Существующий автомобиль', queryset=Vehicle.objects.select_related('client'),
@@ -58,14 +58,14 @@ class ServiceCreateForm(forms.Form):
         widget=forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date'}),
     )
     expires_on = forms.DateField(
-        label='Действует до',
+        label='Действует до — необязательно', required=False,
         input_formats=['%Y-%m-%d'],
         widget=forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date'}),
     )
     price = MoneyField(label='Стоимость, сум', max_digits=12, decimal_places=2, required=False)
     notes = forms.CharField(label='Примечание', required=False, widget=forms.Textarea(attrs={'rows': 3}))
     service_files = MultipleFileField(
-        label='Документы услуги — до 3 файлов', required=False, max_files=3
+        label='Документы услуги — необязательно, до 3 файлов', required=False, max_files=3
     )
     document_recipient = forms.ChoiceField(
         label='Кому переданы документы', choices=[('', 'Не указано'), *ServiceRecord.DocumentRecipient.choices],
@@ -142,20 +142,13 @@ class AdditionalServiceForm(forms.Form):
     service_type = forms.ChoiceField(choices=ServiceRecord.ServiceType.choices, widget=forms.HiddenInput)
     enabled = forms.BooleanField(label='Добавить эту услугу', required=False)
     expires_on = forms.DateField(
-        label='Действует до', required=False, input_formats=['%Y-%m-%d'],
+        label='Действует до — необязательно', required=False, input_formats=['%Y-%m-%d'],
         widget=forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date'}),
     )
     price = MoneyField(label='Стоимость, сум', max_digits=12, decimal_places=2, required=False)
     service_files = MultipleFileField(
-        label='Документы услуги — до 3 файлов', required=False, max_files=3
+        label='Документы услуги — необязательно, до 3 файлов', required=False, max_files=3
     )
-    def clean(self):
-        data = super().clean()
-        if data.get('enabled') and not data.get('expires_on'):
-            self.add_error('expires_on', 'Укажите срок действия услуги.')
-        return data
-
-
 class AdditionalServiceBaseFormSet(BaseFormSet):
     def clean(self):
         super().clean()

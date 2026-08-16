@@ -30,6 +30,90 @@ document.addEventListener('DOMContentLoaded', () => {
     sync();
   });
 
+  const serviceForm = document.getElementById('service-create-form');
+  const duplicateModal = document.getElementById('duplicate-service-modal');
+  const duplicateList = document.getElementById('duplicate-service-list');
+  const duplicateConfirmed = document.getElementById('duplicate-confirmed');
+  const duplicateSkipTypes = document.getElementById('duplicate-skip-types');
+  if (serviceForm && duplicateModal && duplicateList && duplicateConfirmed && duplicateSkipTypes) {
+    let checkingDuplicate = false;
+    let currentDuplicateTypes = [];
+    let currentSelectedTypes = [];
+    const closeDuplicate = () => window.closeCrmModal(duplicateModal);
+    duplicateModal.addEventListener('click', event => {
+      if (event.target.closest('[data-duplicate-dismiss]')) closeDuplicate();
+    });
+    document.getElementById('duplicate-service-confirm')?.addEventListener('click', () => {
+      duplicateConfirmed.value = '1';
+      duplicateSkipTypes.value = '';
+      closeDuplicate();
+      serviceForm.submit();
+    });
+    document.getElementById('duplicate-service-new-only')?.addEventListener('click', () => {
+      duplicateConfirmed.value = '1';
+      duplicateSkipTypes.value = currentDuplicateTypes.join(',');
+      closeDuplicate();
+      serviceForm.submit();
+    });
+    serviceForm.addEventListener('submit', async event => {
+      if (duplicateConfirmed.value === '1' || checkingDuplicate) return;
+      event.preventDefault();
+      checkingDuplicate = true;
+      const submitButton = serviceForm.querySelector('[type="submit"]');
+      if (submitButton) submitButton.disabled = true;
+      const payload = new URLSearchParams();
+      payload.append('csrfmiddlewaretoken', serviceForm.elements.csrfmiddlewaretoken.value);
+      payload.append('vehicle_id', serviceForm.elements.existing_vehicle?.value || '');
+      payload.append('plate_number', serviceForm.elements.plate_number?.value || '');
+      payload.append('service_types', serviceForm.dataset.serviceType);
+      currentSelectedTypes = [serviceForm.dataset.serviceType];
+      serviceForm.querySelectorAll('[data-additional-service]').forEach(card => {
+        const enabled = card.querySelector('input[type="checkbox"]');
+        const type = card.querySelector('input[type="hidden"]');
+        if (enabled?.checked && type?.value) {
+          payload.append('service_types', type.value);
+          currentSelectedTypes.push(type.value);
+        }
+      });
+      try {
+        const response = await fetch(serviceForm.dataset.duplicateCheckUrl, {
+          method: 'POST', body: payload,
+          headers: {'X-Requested-With': 'XMLHttpRequest'},
+        });
+        if (!response.ok) throw new Error('Duplicate check failed');
+        const data = await response.json();
+        if (!data.duplicates?.length) {
+          serviceForm.submit();
+          return;
+        }
+        currentDuplicateTypes = data.duplicates.map(item => item.service_type);
+        duplicateList.innerHTML = '';
+        data.duplicates.forEach(item => {
+          const row = document.createElement('div');
+          row.className = 'duplicate-service-item';
+          const heading = document.createElement('strong');
+          heading.textContent = `${item.service_name} · ${item.plate_number}`;
+          const details = document.createElement('span');
+          details.textContent = `${item.client_name} · оформлена ${item.issued_on}${item.expires_on ? ` · действует до ${item.expires_on}` : ' · без срока'}`;
+          row.append(heading, details);
+          duplicateList.appendChild(row);
+        });
+        const newOnlyButton = document.getElementById('duplicate-service-new-only');
+        if (newOnlyButton) {
+          const newCount = currentSelectedTypes.filter(type => !currentDuplicateTypes.includes(type)).length;
+          newOnlyButton.hidden = newCount === 0;
+          newOnlyButton.textContent = newCount === 1 ? 'Добавить только новую услугу' : `Добавить только новые (${newCount})`;
+        }
+        window.openCrmModal(duplicateModal);
+      } catch (error) {
+        serviceForm.submit();
+      } finally {
+        checkingDuplicate = false;
+        if (submitButton) submitButton.disabled = false;
+      }
+    });
+  }
+
   const clientSelect = document.getElementById('id_existing_client');
   const vehicleSelect = document.getElementById('id_existing_vehicle');
   if (!clientSelect || !vehicleSelect) return;

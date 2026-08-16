@@ -228,6 +228,7 @@ class CrmFlowTests(TestCase):
         response = self.client.post(reverse('crm:service_create', args=['insurance']), {
             'existing_client': owner.pk, 'existing_vehicle': vehicle.pk,
             'issued_on': today, 'expires_on': today + timedelta(days=365),
+            'duplicate_confirmed': '1',
         })
         self.assertEqual(response.status_code, 302)
         old_service.refresh_from_db()
@@ -664,6 +665,94 @@ class CrmFlowTests(TestCase):
             {'insurance', 'tinting'},
         )
         self.assertEqual(owner.services.get(service_type='tinting').price, 300000)
+
+    def test_duplicate_service_requires_confirmation(self):
+        owner = Client.objects.create(full_name='Повторный клиент', phone='998900000003')
+        vehicle = Vehicle.objects.create(client=owner, plate_number='01DUPLICATE')
+        today = timezone.localdate()
+        ServiceRecord.objects.create(
+            client=owner, vehicle=vehicle, service_type='insurance',
+            issued_on=today, expires_on=today + timedelta(days=365), created_by=self.user,
+        )
+        data = {
+            'existing_client': owner.pk,
+            'existing_vehicle': vehicle.pk,
+            'issued_on': today,
+            'expires_on': today + timedelta(days=365),
+        }
+        response = self.client.post(reverse('crm:service_create', args=['insurance']), data)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Подтвердите повторное добавление')
+        self.assertEqual(ServiceRecord.objects.filter(vehicle=vehicle).count(), 1)
+
+        data['duplicate_confirmed'] = '1'
+        response = self.client.post(reverse('crm:service_create', args=['insurance']), data)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(ServiceRecord.objects.filter(vehicle=vehicle).count(), 2)
+
+    def test_can_save_only_missing_service_when_selection_contains_duplicate(self):
+        owner = Client.objects.create(full_name='Смешанные услуги', phone='998900000007')
+        vehicle = Vehicle.objects.create(client=owner, plate_number='01MIXED')
+        today = timezone.localdate()
+        insurance = ServiceRecord.objects.create(
+            client=owner, vehicle=vehicle, service_type='insurance',
+            issued_on=today, expires_on=today + timedelta(days=365),
+        )
+        response = self.client.post(reverse('crm:service_create', args=['insurance']), {
+            'existing_client': owner.pk,
+            'existing_vehicle': vehicle.pk,
+            'issued_on': today,
+            'expires_on': today + timedelta(days=365),
+            'duplicate_confirmed': '1',
+            'duplicate_skip_types': 'insurance',
+            'additional-TOTAL_FORMS': '4',
+            'additional-INITIAL_FORMS': '4',
+            'additional-MIN_NUM_FORMS': '0',
+            'additional-MAX_NUM_FORMS': '1000',
+            'additional-0-service_type': 'avtoraqam',
+            'additional-1-service_type': 'tinting',
+            'additional-2-service_type': 'power_of_attorney',
+            'additional-2-enabled': 'on',
+            'additional-2-expires_on': today + timedelta(days=180),
+            'additional-3-service_type': 'other',
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(ServiceRecord.objects.filter(vehicle=vehicle, service_type='insurance').count(), 1)
+        self.assertTrue(ServiceRecord.objects.filter(vehicle=vehicle, service_type='power_of_attorney').exists())
+        insurance.refresh_from_db()
+        self.assertIsNone(insurance.renewed_by_id)
+
+    def test_duplicate_check_works_by_plate_across_clients(self):
+        first = Client.objects.create(full_name='Первый', phone='998900000004')
+        second = Client.objects.create(full_name='Второй', phone='998900000005')
+        vehicle = Vehicle.objects.create(client=first, plate_number='01SHARED')
+        ServiceRecord.objects.create(
+            client=first, vehicle=vehicle, service_type='tinting',
+            issued_on=timezone.localdate(), expires_on=timezone.localdate() + timedelta(days=90),
+        )
+        response = self.client.post(reverse('crm:service_duplicate_check'), {
+            'plate_number': '01 shared', 'service_types': ['tinting'],
+        })
+        self.assertEqual(response.status_code, 200)
+        duplicate = response.json()['duplicates'][0]
+        self.assertEqual(duplicate['plate_number'], '01SHARED')
+        self.assertEqual(duplicate['client_name'], first.full_name)
+
+    def test_service_in_warning_period_does_not_block_normal_recreation(self):
+        owner = Client.objects.create(full_name='Истекающий клиент', phone='998900000006')
+        vehicle = Vehicle.objects.create(client=owner, plate_number='01WARNING')
+        service = ServiceRecord.objects.create(
+            client=owner, vehicle=vehicle, service_type='insurance',
+            issued_on=timezone.localdate() - timedelta(days=100),
+            expires_on=timezone.localdate() + timedelta(days=2),
+        )
+        ServiceRecord.objects.filter(pk=service.pk).update(
+            created_at=timezone.now() - timedelta(days=10)
+        )
+        response = self.client.post(reverse('crm:service_duplicate_check'), {
+            'vehicle_id': vehicle.pk, 'service_types': ['insurance'],
+        })
+        self.assertEqual(response.json()['duplicates'], [])
 
     def test_client_search_data_contains_vehicle_plate(self):
         owner = Client.objects.create(full_name='Поиск по номеру', phone='998900000002')

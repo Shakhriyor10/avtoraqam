@@ -8,7 +8,9 @@
 .service-art img{width:100%;height:100%;object-fit:contain}
 .service-card.tinting .service-art{right:8px;width:128px;height:108px}
 .service-card.avtoraqam .service-art{right:8px;width:132px;height:104px}
-.service-card.other .service-art{right:10px;width:116px;height:112px}
+.service-card.insurance .service-art{right:12px;top:12px;width:110px;height:110px;padding:2px}
+.service-card.power_of_attorney .service-art{right:13px;top:12px;width:108px;height:108px;padding:3px}
+.service-card.other .service-art{right:14px;top:12px;width:106px;height:106px;padding:4px}
 .service-card.tinting .service-art{color:#14926c}
 .service-card.avtoraqam .service-art{color:#d12f45}
 .service-card.power_of_attorney .service-art{color:#dc8700}
@@ -26,4 +28,4 @@
 .service-select-grid{margin-top:8px}
 .service-select-grid .service-card{min-height:280px}
 @media(max-width:1100px){.service-grid{grid-template-columns:1fr 1fr}.service-card{min-height:210px}.service-select-grid .service-card{min-height:230px}}
-@media(max-width:700px){.service-grid{grid-template-columns:1fr}.service-card{min-height:190px}.service-art{width:90px;height:90px}.service-art svg{width:70px;height:70px}.service-card.tinting .service-art{width:116px;height:96px}.service-card.avtoraqam .service-art{width:120px;height:92px}.service-card.other .service-art{width:106px;height:100px}}
+@media(max-width:700px){.service-grid{grid-template-columns:1fr}.service-card{min-height:190px}.service-art{width:90px;height:90px}.service-art svg{width:70px;height:70px}.service-card.tinting .service-art{width:116px;height:96px}.service-card.avtoraqam .service-art{width:120px;height:92px}.service-card.insurance .service-art{width:102px;height:102px}.service-card.power_of_attorney .service-art{width:100px;height:100px}.service-card.other .service-art{width:98px;height:98px}}

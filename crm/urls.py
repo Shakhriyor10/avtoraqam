@@ -20,6 +20,7 @@ urlpatterns = [
     path('clients/<int:client_pk>/vehicles/new/', views.vehicle_create, name='vehicle_create'),
     path('client-files/<int:pk>/delete/', views.client_file_delete, name='client_file_delete'),
     path('services/new/', views.service_type_select, name='service_type_select'),
+    path('services/check-duplicate/', views.service_duplicate_check, name='service_duplicate_check'),
     path('services/new/<str:service_type>/', views.service_create, name='service_create'),
     path('services/<int:pk>/edit/', views.service_edit, name='service_edit'),
     path('services/<int:pk>/close/', views.service_close, name='service_close'),

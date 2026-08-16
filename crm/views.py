@@ -29,6 +29,49 @@ def ordered_service_types():
     return [(value, choices[value]) for value in SERVICE_CARD_ORDER if value in choices]
 
 
+def _duplicate_services(plate_number, service_types):
+    """Return current/recent services which should be confirmed before duplicating."""
+    normalized_plate = ''.join((plate_number or '').upper().split())
+    valid_types = dict(ServiceRecord.ServiceType.choices)
+    requested_types = {value for value in service_types if value in valid_types}
+    if not normalized_plate or not requested_types:
+        return []
+
+    recent_since = timezone.now() - timedelta(days=3)
+    today = timezone.localdate()
+    warning_days = ServiceNotificationSetting.warning_days_map()
+    queryset = ServiceRecord.objects.select_related('client', 'vehicle').filter(
+        vehicle__plate_number=normalized_plate,
+        service_type__in=requested_types,
+        closed_at__isnull=True,
+        renewed_by__isnull=True,
+    ).order_by('-created_at')
+    found = []
+    seen_types = set()
+    for service in queryset:
+        is_recent = service.created_at >= recent_since
+        is_before_warning = (
+            service.expires_on is None or
+            service.expires_on > today + timedelta(days=warning_days[service.service_type])
+        )
+        if service.service_type in seen_types or not (is_recent or is_before_warning):
+            continue
+        seen_types.add(service.service_type)
+        found.append(service)
+    return found
+
+
+def _duplicate_payload(services):
+    return [{
+        'service_type': service.service_type,
+        'service_name': service.get_service_type_display(),
+        'client_name': service.client.full_name,
+        'plate_number': service.vehicle.plate_number,
+        'issued_on': service.issued_on.strftime('%d.%m.%Y'),
+        'expires_on': service.expires_on.strftime('%d.%m.%Y') if service.expires_on else None,
+    } for service in services]
+
+
 def format_sum(value):
     return f'{value:,.0f}'.replace(',', ' ')
 
@@ -515,6 +558,16 @@ def service_type_select(request):
 
 
 @login_required
+def service_duplicate_check(request):
+    if request.method != 'POST':
+        return HttpResponseNotAllowed(['POST'])
+    vehicle = Vehicle.objects.filter(pk=request.POST.get('vehicle_id')).first()
+    plate_number = vehicle.plate_number if vehicle else request.POST.get('plate_number', '')
+    services = _duplicate_services(plate_number, request.POST.getlist('service_types'))
+    return JsonResponse({'duplicates': _duplicate_payload(services)})
+
+
+@login_required
 @transaction.atomic
 def service_create(request, service_type):
     valid_types = dict(ServiceRecord.ServiceType.choices)
@@ -558,6 +611,29 @@ def service_create(request, service_type):
                 request, form, additional_services, service_type, valid_types,
                 vehicle_owners=None, renewing_service=renewing_service,
             )
+        selected_types = [service_type]
+        selected_types.extend(
+            extra_form.cleaned_data['service_type']
+            for extra_form in ([] if renewing_service or not additional_posted else additional_services)
+            if extra_form.cleaned_data.get('enabled')
+        )
+        duplicate_types_to_skip = set()
+        if not renewing_service:
+            selected_vehicle = form.cleaned_data['existing_vehicle']
+            plate_number = selected_vehicle.plate_number if selected_vehicle else form.cleaned_data['plate_number']
+            duplicates = _duplicate_services(plate_number, selected_types)
+            if duplicates and request.POST.get('duplicate_confirmed') != '1':
+                names = ', '.join(item.get_service_type_display() for item in duplicates)
+                form.add_error(
+                    None,
+                    f'На этот автомобиль уже оформлена услуга: {names}. Подтвердите повторное добавление.',
+                )
+                return _render_service_create(
+                    request, form, additional_services, service_type, valid_types,
+                    vehicle_owners=None, renewing_service=renewing_service,
+                )
+            requested_skips = set(filter(None, request.POST.get('duplicate_skip_types', '').split(',')))
+            duplicate_types_to_skip = requested_skips & {item.service_type for item in duplicates}
         client = form.cleaned_data['existing_client']
         if not client:
             client = Client.objects.create(
@@ -590,6 +666,16 @@ def service_create(request, service_type):
                     'document_recipient': form.cleaned_data['document_recipient'],
                     'files': request.FILES.getlist(f'additional-{index}-service_files'),
                 })
+        services_to_create = [
+            item for item in services_to_create
+            if item['service_type'] not in duplicate_types_to_skip
+        ]
+        if not services_to_create:
+            form.add_error(None, 'Все выбранные услуги уже существуют. Выберите «Добавить все услуги».')
+            return _render_service_create(
+                request, form, additional_services, service_type, valid_types,
+                vehicle_owners=None, renewing_service=renewing_service,
+            )
         for service_data in services_to_create:
             attached_files = service_data.pop('files')
             service = ServiceRecord.objects.create(

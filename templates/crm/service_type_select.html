@@ -14,13 +14,13 @@
       {% if value == 'avtoraqam' %}
       <img src="{% static 'img/service-icons/avtoraqam.png' %}" alt="">
       {% elif value == 'insurance' %}
-      <svg viewBox="0 0 64 64"><path d="M32 6 52 14v16c0 13-8 23-20 29C20 53 12 43 12 30V14Z"/><path d="m22 32 7 7 14-16"/></svg>
+      <img src="{% static 'img/service-icons/insurance-policy.png' %}?v=2" alt="">
       {% elif value == 'tinting' %}
       <img src="{% static 'img/service-icons/tinting-process.png' %}" alt="">
       {% elif value == 'power_of_attorney' %}
-      <svg viewBox="0 0 64 64"><path d="M17 7h24l8 8v42H17Z"/><path d="M41 7v10h8M24 27h18M24 35h18M24 43h10"/><path d="m39 49 10-10 5 5-10 10-7 2Z"/></svg>
+      <img src="{% static 'img/service-icons/power-of-attorney-document.png' %}" alt="">
       {% else %}
-      <img src="{% static 'img/service-icons/other.png' %}" alt="">
+      <img src="{% static 'img/service-icons/other-documents.png' %}" alt="">
       {% endif %}
     </span>
     <div class="service-copy"><span>Создать документ</span><h3>{{ label }}</h3><p>Перейти к заполнению данных</p></div>

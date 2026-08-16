@@ -118,6 +118,14 @@ input,select,textarea{transition:border-color .18s ease,box-shadow .18s ease,bac
 input:focus,select:focus,textarea:focus{box-shadow:0 0 0 4px rgba(65,185,184,.12)}
 .additional-service-fields{transition:opacity .22s ease,transform .22s ease}
 .additional-service-card:not(.enabled) .additional-service-fields{transform:translateY(-4px)}
+.duplicate-service-dialog{width:min(620px,100%)}
+.duplicate-service-intro{margin:-9px 0 15px;color:var(--muted);line-height:1.55}
+.duplicate-service-list{display:grid;gap:10px}
+.duplicate-service-item{display:grid;gap:5px;padding:14px 16px;border:1px solid #f0d59d;border-radius:11px;background:#fff9ec}
+.duplicate-service-item strong{color:#8b5a00;font-size:15px}
+.duplicate-service-item span{color:#6f7785;font-size:13px;line-height:1.45}
+.duplicate-service-question{margin:18px 0 0;font-weight:800;color:#172033}
+.duplicate-modal-actions{flex-wrap:wrap}.duplicate-modal-actions .button{white-space:nowrap}
 .message{animation:message-in .4s cubic-bezier(.22,1,.36,1) both}
 @keyframes message-in{from{opacity:0;transform:translateY(-8px) scale(.99)}to{opacity:1;transform:none}}
 

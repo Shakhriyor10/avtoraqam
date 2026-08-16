@@ -2,9 +2,11 @@ from datetime import timedelta
 
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Sum
 from django.core.paginator import Paginator
 from django.http import HttpResponseNotAllowed, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -13,7 +15,7 @@ from django.utils import timezone
 from django.utils.dateparse import parse_date
 
 from .forms import (
-    AdditionalServiceFormSet, ClientForm, ServiceCreateForm, ServiceEditForm,
+    AdditionalServiceFormSet, ClientForm, ServiceCreateForm, ServiceEditForm, StaffUserCreationForm,
     VehicleForm, VehicleFormSet,
 )
 from .models import Client, ClientFile, ServiceFile, ServiceNotificationSetting, ServiceRecord, Vehicle
@@ -58,16 +60,21 @@ def dashboard_stats(date_from='', date_to='', days_map=None):
     )
     date_from = valid_date(date_from)
     date_to = valid_date(date_to)
+    revenue_services = ServiceRecord.objects.all()
+    if not date_from and not date_to:
+        revenue_services = revenue_services.filter(created_at__date=today)
     if date_from:
         clients = clients.filter(created_at__date__gte=date_from)
         vehicles = vehicles.filter(created_at__date__gte=date_from)
         created_services = created_services.filter(created_at__date__gte=date_from)
-        expiring_services = expiring_services.filter(expires_on__gte=date_from)
+        expiring_services = expiring_services.filter(created_at__date__gte=date_from)
+        revenue_services = revenue_services.filter(created_at__date__gte=date_from)
     if date_to:
         clients = clients.filter(created_at__date__lte=date_to)
         vehicles = vehicles.filter(created_at__date__lte=date_to)
         created_services = created_services.filter(created_at__date__lte=date_to)
-        expiring_services = expiring_services.filter(expires_on__lte=date_to)
+        expiring_services = expiring_services.filter(created_at__date__lte=date_to)
+        revenue_services = revenue_services.filter(created_at__date__lte=date_to)
     return {
         'client_count': clients.count(),
         'vehicle_count': vehicles.count(),
@@ -76,6 +83,7 @@ def dashboard_stats(date_from='', date_to='', days_map=None):
             warning_query(today, days_map)
         ).count(),
         'expired_count': expiring_services.filter(expires_on__lt=today).count(),
+        'revenue_total': revenue_services.aggregate(total=Sum('price'))['total'] or 0,
     }
 
 
@@ -146,15 +154,17 @@ def filter_services(request, days_map=None):
     elif not query:
         queryset = queryset.filter(closed_at__isnull=True)
     if date_from:
-        queryset = queryset.filter(expires_on__gte=date_from)
+        queryset = queryset.filter(created_at__date__gte=date_from)
     if date_to:
-        queryset = queryset.filter(expires_on__lte=date_to)
+        queryset = queryset.filter(created_at__date__lte=date_to)
     return queryset
 
 
 @login_required
 @transaction.atomic
 def notification_settings(request):
+    if not request.user.is_superuser:
+        raise PermissionDenied
     rows = []
     if request.method == 'POST':
         valid = True
@@ -182,7 +192,43 @@ def notification_settings(request):
             'value': service_type, 'label': label,
             'days': ServiceNotificationSetting.get_warning_days(service_type),
         })
-    return render(request, 'crm/notification_settings.html', {'settings_rows': rows})
+    return render(request, 'crm/notification_settings.html', {
+        'settings_rows': rows,
+        'user_form': StaffUserCreationForm(),
+        'managed_users': get_user_model().objects.filter(is_superuser=False).order_by('username'),
+    })
+
+
+@login_required
+@transaction.atomic
+def user_create(request):
+    if not request.user.is_superuser:
+        raise PermissionDenied
+    if request.method != 'POST':
+        return HttpResponseNotAllowed(['POST'])
+    form = StaffUserCreationForm(request.POST)
+    if form.is_valid():
+        user = form.save()
+        messages.success(request, f'Пользователь {user.username} создан.')
+    else:
+        for errors in form.errors.values():
+            for error in errors:
+                messages.error(request, error)
+    return redirect('crm:notification_settings')
+
+
+@login_required
+@transaction.atomic
+def user_toggle_active(request, pk):
+    if not request.user.is_superuser:
+        raise PermissionDenied
+    if request.method != 'POST':
+        return HttpResponseNotAllowed(['POST'])
+    user = get_object_or_404(get_user_model(), pk=pk, is_superuser=False)
+    user.is_active = not user.is_active
+    user.save(update_fields=['is_active'])
+    messages.success(request, f'Пользователь {user.username} обновлён.')
+    return redirect('crm:notification_settings')
 
 
 @login_required
@@ -209,6 +255,7 @@ def service_search(request):
             'close_url': reverse('crm:service_close', args=[item.pk]) + '?next=dashboard',
             'renew_url': reverse('crm:service_create', args=[item.service_type]) + f'?renew={item.pk}',
             'delete_url': reverse('crm:service_delete', args=[item.pk]),
+            'deletable': request.user.is_superuser,
             'closable': item.status in {'warning', 'expired'},
         } for item in services],
         'filtered': filtered,
@@ -254,6 +301,7 @@ def client_search(request):
         'url': reverse('crm:client_detail', args=[client.pk]),
         'vehicles_url': reverse('crm:client_vehicles', args=[client.pk]),
         'delete_url': reverse('crm:client_delete', args=[client.pk]),
+        'deletable': request.user.is_superuser,
     } for client in clients]})
 
 
@@ -293,6 +341,8 @@ def client_detail(request, pk):
 @login_required
 @transaction.atomic
 def client_delete(request, pk):
+    if not request.user.is_superuser:
+        raise PermissionDenied
     if request.method != 'POST':
         return HttpResponseNotAllowed(['POST'])
     client = get_object_or_404(Client, pk=pk)
@@ -404,6 +454,8 @@ def service_close(request, pk):
 @login_required
 @transaction.atomic
 def service_delete(request, pk):
+    if not request.user.is_superuser:
+        raise PermissionDenied
     if request.method != 'POST':
         return HttpResponseNotAllowed(['POST'])
     service = get_object_or_404(
@@ -420,6 +472,8 @@ def service_delete(request, pk):
 
 @login_required
 def client_file_delete(request, pk):
+    if not request.user.is_superuser:
+        raise PermissionDenied
     item = get_object_or_404(ClientFile, pk=pk)
     client_id = item.client_id
     if request.method == 'POST':
@@ -430,6 +484,8 @@ def client_file_delete(request, pk):
 
 @login_required
 def service_file_delete(request, pk):
+    if not request.user.is_superuser:
+        raise PermissionDenied
     item = get_object_or_404(ServiceFile.objects.select_related('service'), pk=pk)
     service_id = item.service_id
     if request.method == 'POST':

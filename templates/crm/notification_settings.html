@@ -12,4 +12,12 @@
   </div>
   <div class="settings-footer"><div><strong>Изменения применяются сразу</strong><span>К статусам в CRM и следующим сообщениям Telegram-бота</span></div><div class="form-actions"><a href="{% url 'crm:dashboard' %}">Отмена</a><button class="button" type="submit">Сохранить настройки</button></div></div>
 </form>
+
+<div class="section-title user-management-header"><div><h2>Пользователи</h2></div><button class="button" id="open-user-create" type="button">+ Добавить пользователя</button></div>
+<section class="user-management-grid">
+  <div class="table-card user-table"><table><thead><tr><th>Пользователь</th><th>Статус</th><th></th></tr></thead><tbody>
+    {% for user in managed_users %}<tr><td><strong>{{ user.get_full_name|default:user.username }}</strong><small>{{ user.username }}</small></td><td><span class="badge {% if user.is_active %}active{% else %}closed{% endif %}">{% if user.is_active %}Активен{% else %}Отключён{% endif %}</span></td><td><form method="post" action="{% url 'crm:user_toggle_active' user.pk %}">{% csrf_token %}<button class="button secondary" type="submit">{% if user.is_active %}Отключить{% else %}Включить{% endif %}</button></form></td></tr>{% empty %}<tr><td colspan="3" class="empty">Обычных пользователей пока нет.</td></tr>{% endfor %}
+  </tbody></table></div>
+</section>
+<div class="vehicle-modal" id="user-create-modal" hidden><div class="vehicle-modal-backdrop" data-user-modal-close></div><section class="vehicle-modal-dialog user-create-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="user-create-title"><button type="button" class="modal-close" data-user-modal-close aria-label="Закрыть">×</button><p class="eyebrow">Новый сотрудник</p><h2 id="user-create-title">Добавить пользователя</h2><form method="post" action="{% url 'crm:user_create' %}" id="user-create-form">{% csrf_token %}<div class="form-grid"><label><span>Логин</span>{{ user_form.username }}</label><label><span>Имя</span>{{ user_form.first_name }}</label><label><span>Фамилия</span>{{ user_form.last_name }}</label><label><span>Пароль</span>{{ user_form.password1 }}</label><label><span>Повторите пароль</span>{{ user_form.password2 }}</label></div><div class="modal-actions"><button class="button secondary" type="button" data-user-modal-close>Отмена</button><button class="button" type="submit">Создать профиль</button></div></form></section></div>
 {% endblock %}

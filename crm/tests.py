@@ -13,7 +13,7 @@ from .models import Client, ClientFile, ServiceNotificationSetting, ServiceRecor
 
 class CrmFlowTests(TestCase):
     def setUp(self):
-        self.user = get_user_model().objects.create_user('manager', password='test-password')
+        self.user = get_user_model().objects.create_superuser('manager', password='test-password')
         self.client.force_login(self.user)
 
     def test_dashboard_opens(self):
@@ -33,6 +33,51 @@ class CrmFlowTests(TestCase):
         self.assertRedirects(response, reverse('crm:dashboard'))
         response = self.client.post(reverse('logout'))
         self.assertRedirects(response, reverse('login'))
+
+    def test_superuser_can_create_and_disable_regular_user(self):
+        response = self.client.post(reverse('crm:user_create'), {
+            'username': 'employee', 'first_name': 'Оператор', 'last_name': '',
+            'password1': 'StrongPass-2026!', 'password2': 'StrongPass-2026!',
+        })
+        self.assertRedirects(response, reverse('crm:notification_settings'))
+        employee = get_user_model().objects.get(username='employee')
+        self.assertFalse(employee.is_superuser)
+        self.assertFalse(employee.is_staff)
+        self.client.post(reverse('crm:user_toggle_active', args=[employee.pk]))
+        employee.refresh_from_db()
+        self.assertFalse(employee.is_active)
+
+    def test_regular_user_cannot_delete_service_or_open_settings(self):
+        employee = get_user_model().objects.create_user('employee', password='employee-pass')
+        owner = Client.objects.create(full_name='Защищённый клиент', phone='100')
+        vehicle = Vehicle.objects.create(client=owner, plate_number='01SAFE')
+        service = ServiceRecord.objects.create(
+            client=owner, vehicle=vehicle, service_type='insurance',
+            expires_on=timezone.localdate() + timedelta(days=30),
+        )
+        self.client.force_login(employee)
+        self.assertEqual(self.client.get(reverse('crm:notification_settings')).status_code, 403)
+        response = self.client.post(
+            reverse('crm:service_delete', args=[service.pk]),
+            {'password': 'employee-pass'},
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertTrue(ServiceRecord.objects.filter(pk=service.pk).exists())
+
+    def test_revenue_total_is_visible_only_to_superuser_and_uses_date_filter(self):
+        owner = Client.objects.create(full_name='Доход', phone='200')
+        vehicle = Vehicle.objects.create(client=owner, plate_number='01MONEY')
+        ServiceRecord.objects.create(
+            client=owner, vehicle=vehicle, service_type='avtoraqam',
+            price=150000, expires_on=None,
+        )
+        response = self.client.get(reverse('crm:dashboard'))
+        self.assertContains(response, 'Сумма за сегодня')
+        self.assertEqual(response.context['revenue_total'], 150000)
+        employee = get_user_model().objects.create_user('employee2', password='employee-pass')
+        self.client.force_login(employee)
+        response = self.client.get(reverse('crm:dashboard'))
+        self.assertNotContains(response, 'Сумма за сегодня')
 
     def test_service_menu_opens_type_selection(self):
         response = self.client.get(reverse('crm:service_type_select'))
@@ -442,10 +487,13 @@ class CrmFlowTests(TestCase):
             'date_to': (today + timedelta(days=10)).isoformat(),
         })
         stats = response.json()['stats']
+        results = response.json()['results']
         self.assertEqual(stats['client_count'], 1)
         self.assertEqual(stats['vehicle_count'], 1)
         self.assertEqual(stats['service_count'], 1)
         self.assertEqual(stats['warning_count'], 1)
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]['client'], first.full_name)
 
     def test_client_list_paginates_but_searches_full_database(self):
         Client.objects.bulk_create([

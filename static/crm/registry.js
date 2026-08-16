@@ -32,11 +32,14 @@ document.addEventListener('DOMContentLoaded', () => {
         'stat-services': data.stats.service_count,
         'stat-warning': data.stats.warning_count,
         'stat-expired': data.stats.expired_count,
+        'stat-revenue': `${new Intl.NumberFormat('ru-RU').format(Number(data.stats.revenue_total))} сум`,
       };
       Object.entries(statTargets).forEach(([id, value]) => {
         const element = document.getElementById(id);
         if (element) element.textContent = value;
       });
+      const revenueLabel = document.getElementById('stat-revenue-label');
+      if (revenueLabel) revenueLabel.textContent = params.get('date_from') || params.get('date_to') ? 'Сумма за период' : 'Сумма за сегодня';
     } catch (error) {
       // Оставляем серверный список, если соединение временно недоступно.
     }

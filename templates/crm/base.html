@@ -9,11 +9,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'crm/app.css' %}">
-  <link rel="stylesheet" href="{% static 'crm/forms.css' %}?v=8">
-  <link rel="stylesheet" href="{% static 'crm/dashboard.css' %}?v=8">
+  <link rel="stylesheet" href="{% static 'crm/forms.css' %}?v=10">
+  <link rel="stylesheet" href="{% static 'crm/dashboard.css' %}?v=9">
   <link rel="stylesheet" href="{% static 'crm/close-service.css' %}?v=7">
-  <script src="{% static 'crm/app.js' %}?v=6" defer></script>
-  <script src="{% static 'crm/registry.js' %}?v=5" defer></script>
+  <script src="{% static 'crm/app.js' %}?v=7" defer></script>
+  <script src="{% static 'crm/registry.js' %}?v=6" defer></script>
   <script src="{% static 'crm/clients.js' %}?v=5" defer></script>
   <script src="{% static 'crm/client-detail.js' %}?v=3" defer></script>
   <script src="{% static 'crm/close-service.js' %}?v=5" defer></script>
@@ -21,14 +21,14 @@
   <script src="{% static 'crm/delete-client.js' %}?v=2" defer></script>
   <script src="{% static 'crm/client-edit.js' %}?v=1" defer></script>
 </head>
-<body>
+<body class="{% if request.user.is_superuser %}superuser{% else %}staff-user{% endif %}">
   <aside class="sidebar">
     <a class="brand brand-logo" href="{% url 'crm:dashboard' %}"><span class="logo-frame"><img src="{% static 'img/avtoraqam_logo.png' %}" alt="Avtoraqam Samarkand"></span></a>
     <nav>
       <a href="{% url 'crm:dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">Обзор</a>
       <a href="{% url 'crm:client_list' %}" class="{% if 'client' in request.resolver_match.url_name %}active{% endif %}">Клиенты</a>
       <a href="{% url 'crm:service_type_select' %}" class="{% if 'service' in request.resolver_match.url_name %}active{% endif %}">Новая услуга</a>
-      <a href="{% url 'crm:notification_settings' %}" class="{% if request.resolver_match.url_name == 'notification_settings' %}active{% endif %}">Настройки</a>
+      {% if request.user.is_superuser %}<a href="{% url 'crm:notification_settings' %}" class="{% if request.resolver_match.url_name == 'notification_settings' %}active{% endif %}">Настройки</a>{% endif %}
     </nav>
     <div class="sidebar-account"><div class="user">{{ request.user.get_full_name|default:request.user.username }}<small>Сотрудник</small></div><form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit" class="logout-button"><svg viewBox="0 0 24 24"><path d="M10 5H5v14h5M14 8l4 4-4 4m4-4H9"/></svg>Выйти</button></form></div>
   </aside>

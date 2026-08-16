@@ -149,3 +149,22 @@ window.closeCrmModal = (modal, afterClose) => {
     afterClose?.();
   }, 180);
 };
+
+document.addEventListener('DOMContentLoaded', () => {
+  const opener = document.getElementById('open-user-create');
+  const modal = document.getElementById('user-create-modal');
+  const form = document.getElementById('user-create-form');
+  if (!opener || !modal || !form) return;
+  const close = () => window.closeCrmModal(modal);
+  opener.addEventListener('click', () => {
+    form.reset();
+    window.openCrmModal(modal);
+    window.setTimeout(() => form.elements.username?.focus(), 0);
+  });
+  modal.addEventListener('click', event => {
+    if (event.target.closest('[data-user-modal-close]')) close();
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && !modal.hidden) close();
+  });
+});

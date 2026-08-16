@@ -66,11 +66,8 @@ class ServiceRecord(models.Model):
 
     class DocumentRecipient(models.TextChoices):
         OWNER = 'owner', 'Владелец авто'
-        FATHER = 'father', 'Отец'
-        MOTHER = 'mother', 'Мать'
-        HUSBAND = 'husband', 'Муж'
-        WIFE = 'wife', 'Жена'
-        BROTHER = 'brother', 'Брат'
+        RELATIVE = 'relative', 'Родственник'
+        STRANGER = 'stranger', 'Незнакомый'
 
     client = models.ForeignKey(Client, related_name='services', on_delete=models.CASCADE)
     vehicle = models.ForeignKey(Vehicle, related_name='services', on_delete=models.CASCADE)

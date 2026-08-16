@@ -1,7 +1,26 @@
 from django import forms
+from django.contrib.auth import get_user_model
+from django.contrib.auth.forms import UserCreationForm
 from django.forms import BaseFormSet, BaseInlineFormSet, formset_factory, inlineformset_factory
 
 from .models import Client, ServiceRecord, Vehicle
+
+
+class StaffUserCreationForm(UserCreationForm):
+    class Meta(UserCreationForm.Meta):
+        model = get_user_model()
+        fields = ('username', 'first_name', 'last_name')
+        labels = {
+            'username': 'Логин', 'first_name': 'Имя', 'last_name': 'Фамилия',
+        }
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.is_staff = False
+        user.is_superuser = False
+        if commit:
+            user.save()
+        return user
 
 
 class MoneyField(forms.DecimalField):

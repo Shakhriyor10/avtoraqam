@@ -1,4 +1,5 @@
 {% extends 'crm/base.html' %}
+{% load static %}
 {% block title %}Выбор услуги · Avtoraqam CRM{% endblock %}
 {% block content %}
 <header>
@@ -11,15 +12,15 @@
   <a class="service-card {{ value }}" href="{% url 'crm:service_create' value %}{% if request.GET.client %}?client={{ request.GET.client }}{% endif %}">
     <span class="service-art" aria-hidden="true">
       {% if value == 'avtoraqam' %}
-      <svg viewBox="0 0 64 64"><rect x="3" y="19" width="58" height="26" rx="4"/><path d="M15 19v26"/><rect class="plate-flag" x="7" y="24" width="5" height="3" rx=".5"/><circle cx="9.5" cy="36" r="2"/><circle cx="55" cy="32" r="1.5"/><text class="plate-text" x="19" y="35">01 A 777 AA</text></svg>
+      <img src="{% static 'img/service-icons/avtoraqam.png' %}" alt="">
       {% elif value == 'insurance' %}
-      <svg viewBox="0 0 64 64"><path d="M32 6 52 14v16c0 13-8 23-20 29C20 53 12 43 12 30V14Z"/><path d="m22 32 7 7 14-16"/></svg>
+      <img src="{% static 'img/service-icons/insurance-v2.png' %}" alt="">
       {% elif value == 'tinting' %}
-      <svg viewBox="0 0 64 64"><path d="M5 42c1-4 4-7 8-8l7-2 9-9c2-2 4-3 7-3h7c3 0 5 1 7 4l6 8 3 1c2 1 3 3 3 5v6h-6"/><path d="M8 44H5v-2m18 2h18"/><path class="tinted-window" d="m24 31 7-7c1-1 3-2 5-2h3v10Zm18-9h1c2 0 3 1 5 3l5 7H42Z"/><path d="M24 31h29M10 37h7m38 0h5"/><circle cx="17" cy="44" r="6"/><circle cx="48" cy="44" r="6"/><circle cx="17" cy="44" r="2"/><circle cx="48" cy="44" r="2"/><path d="M27 37h8"/></svg>
+      <img src="{% static 'img/service-icons/tinting.png' %}" alt="">
       {% elif value == 'power_of_attorney' %}
-      <svg viewBox="0 0 64 64"><path d="M17 7h24l8 8v42H17Z"/><path d="M41 7v10h8M24 27h18M24 35h18M24 43h10"/><path d="m39 49 10-10 5 5-10 10-7 2Z"/></svg>
+      <img src="{% static 'img/service-icons/power_of_attorney.png' %}" alt="">
       {% else %}
-      <svg viewBox="0 0 64 64"><rect x="9" y="13" width="46" height="38" rx="7"/><path d="M21 13V9m22 4V9M9 25h46M32 32v13M25 38h14"/></svg>
+      <img src="{% static 'img/service-icons/other.png' %}" alt="">
       {% endif %}
     </span>
     <div class="service-copy"><span>Создать документ</span><h3>{{ label }}</h3><p>Перейти к заполнению данных</p></div>

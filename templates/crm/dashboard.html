@@ -2,7 +2,7 @@
 {% load static %}
 {% block title %}Обзор · Avtoraqam CRM{% endblock %}
 {% block content %}
-<header class="dashboard-header"><div><h1>Добро пожаловать, {{ request.user.first_name|default:request.user.username }}</h1></div>{% if request.user.is_superuser %}<div class="header-revenue"><span id="stat-revenue-label">{% if date_from or date_to %}Сумма за период{% else %}Сумма за сегодня{% endif %}</span><strong id="stat-revenue">{{ revenue_total|floatformat:0 }} сум</strong></div>{% endif %}</header>
+<header class="dashboard-header"><div><h1>Добро пожаловать, {{ request.user.first_name|default:request.user.username }}</h1></div>{% if request.user.is_superuser %}<div class="header-revenue"><span id="stat-revenue-label">{% if date_from or date_to %}Сумма за период{% else %}Сумма за сегодня{% endif %}</span><strong id="stat-revenue">{{ revenue_total_display }} сум</strong></div>{% endif %}</header>
 
 <section class="stats">
   <div><span>Добавлено клиентов</span><strong id="stat-clients">{{ client_count }}</strong></div>
@@ -20,11 +20,11 @@
       {% if value == 'avtoraqam' %}
       <img src="{% static 'img/service-icons/avtoraqam.png' %}" alt="">
       {% elif value == 'insurance' %}
-      <img src="{% static 'img/service-icons/insurance-v2.png' %}" alt="">
+      <svg viewBox="0 0 64 64"><path d="M32 6 52 14v16c0 13-8 23-20 29C20 53 12 43 12 30V14Z"/><path d="m22 32 7 7 14-16"/></svg>
       {% elif value == 'tinting' %}
-      <img src="{% static 'img/service-icons/tinting.png' %}" alt="">
+      <img src="{% static 'img/service-icons/tinting-process.png' %}" alt="">
       {% elif value == 'power_of_attorney' %}
-      <img src="{% static 'img/service-icons/power_of_attorney.png' %}" alt="">
+      <svg viewBox="0 0 64 64"><path d="M17 7h24l8 8v42H17Z"/><path d="M41 7v10h8M24 27h18M24 35h18M24 43h10"/><path d="m39 49 10-10 5 5-10 10-7 2Z"/></svg>
       {% else %}
       <img src="{% static 'img/service-icons/other.png' %}" alt="">
       {% endif %}

@@ -74,6 +74,7 @@ class CrmFlowTests(TestCase):
         response = self.client.get(reverse('crm:dashboard'))
         self.assertContains(response, 'Сумма за сегодня')
         self.assertEqual(response.context['revenue_total'], 150000)
+        self.assertEqual(response.context['revenue_total_display'], '150 000')
         employee = get_user_model().objects.create_user('employee2', password='employee-pass')
         self.client.force_login(employee)
         response = self.client.get(reverse('crm:dashboard'))
@@ -83,6 +84,10 @@ class CrmFlowTests(TestCase):
         response = self.client.get(reverse('crm:service_type_select'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Выберите услугу')
+        self.assertEqual(
+            [value for value, _label in response.context['service_types']],
+            ['avtoraqam', 'tinting', 'insurance', 'power_of_attorney', 'other'],
+        )
         self.assertContains(response, reverse('crm:service_create', args=['insurance']))
         self.assertContains(response, reverse('crm:service_create', args=['tinting']))
 

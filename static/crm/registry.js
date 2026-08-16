@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
         'stat-services': data.stats.service_count,
         'stat-warning': data.stats.warning_count,
         'stat-expired': data.stats.expired_count,
-        'stat-revenue': `${new Intl.NumberFormat('ru-RU').format(Number(data.stats.revenue_total))} сум`,
+        'stat-revenue': `${new Intl.NumberFormat('ru-RU').format(Number(data.stats.revenue_total)).replace(/\u00a0/g, ' ')} сум`,
       };
       Object.entries(statTargets).forEach(([id, value]) => {
         const element = document.getElementById(id);

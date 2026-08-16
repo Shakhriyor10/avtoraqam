@@ -21,6 +21,18 @@ from .forms import (
 from .models import Client, ClientFile, ServiceFile, ServiceNotificationSetting, ServiceRecord, Vehicle
 
 
+SERVICE_CARD_ORDER = ('avtoraqam', 'tinting', 'insurance', 'power_of_attorney', 'other')
+
+
+def ordered_service_types():
+    choices = dict(ServiceRecord.ServiceType.choices)
+    return [(value, choices[value]) for value in SERVICE_CARD_ORDER if value in choices]
+
+
+def format_sum(value):
+    return f'{value:,.0f}'.replace(',', ' ')
+
+
 def notification_days_map():
     return ServiceNotificationSetting.warning_days_map()
 
@@ -109,8 +121,9 @@ def dashboard(request):
         'status_filter': request.GET.get('status', ''),
         'date_from': date_from,
         'date_to': date_to,
-        'service_types': ServiceRecord.ServiceType.choices,
+        'service_types': ordered_service_types(),
     }
+    context['revenue_total_display'] = format_sum(context['revenue_total'])
     return render(request, 'crm/dashboard.html', context)
 
 
@@ -497,7 +510,7 @@ def service_file_delete(request, pk):
 @login_required
 def service_type_select(request):
     return render(request, 'crm/service_type_select.html', {
-        'service_types': ServiceRecord.ServiceType.choices,
+        'service_types': ordered_service_types(),
     })
 
 

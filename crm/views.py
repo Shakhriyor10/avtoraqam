@@ -18,7 +18,8 @@ from .forms import (
     AdditionalServiceFormSet, ClientForm, ServiceCreateForm, ServiceEditForm, StaffUserCreationForm,
     VehicleForm, VehicleFormSet,
 )
-from .models import Client, ClientFile, ServiceFile, ServiceNotificationSetting, ServiceRecord, Vehicle
+from .context_processors import THEMES
+from .models import AppearanceSetting, Client, ClientFile, ServiceFile, ServiceNotificationSetting, ServiceRecord, Vehicle
 
 
 SERVICE_CARD_ORDER = ('avtoraqam', 'tinting', 'insurance', 'power_of_attorney', 'other')
@@ -222,6 +223,23 @@ def notification_settings(request):
     if not request.user.is_superuser:
         raise PermissionDenied
     rows = []
+    if request.method == 'POST' and request.POST.get('settings_action') == 'color_mode':
+        color_mode = request.POST.get('color_mode', '')
+        valid_modes = dict(AppearanceSetting.ColorMode.choices)
+        if color_mode not in valid_modes:
+            messages.error(request, 'Выберите дневной или тёмный режим.')
+        else:
+            AppearanceSetting.objects.update_or_create(pk=1, defaults={'color_mode': color_mode})
+            messages.success(request, f'Режим «{valid_modes[color_mode]}» применён.')
+        return redirect('crm:notification_settings')
+    if request.method == 'POST' and request.POST.get('settings_action') == 'theme':
+        selected_theme = request.POST.get('theme', '')
+        if selected_theme not in THEMES:
+            messages.error(request, 'Выберите доступную цветовую тему.')
+        else:
+            AppearanceSetting.objects.update_or_create(pk=1, defaults={'theme': selected_theme})
+            messages.success(request, f'Тема «{THEMES[selected_theme]["label"]}» применена.')
+        return redirect('crm:notification_settings')
     if request.method == 'POST':
         valid = True
         pending = {}
@@ -250,6 +268,10 @@ def notification_settings(request):
         })
     return render(request, 'crm/notification_settings.html', {
         'settings_rows': rows,
+        'appearance_themes': [dict(value=value, **theme) for value, theme in THEMES.items()],
+        'selected_theme': AppearanceSetting.get_theme(),
+        'color_modes': AppearanceSetting.ColorMode.choices,
+        'selected_color_mode': AppearanceSetting.get_color_mode(),
         'user_form': StaffUserCreationForm(),
         'managed_users': get_user_model().objects.filter(is_superuser=False).order_by('username'),
     })

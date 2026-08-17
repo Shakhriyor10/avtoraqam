@@ -1,6 +1,6 @@
 {% load static %}
 <!doctype html>
-<html lang="ru">
+<html lang="ru" data-theme="{{ crm_theme_name }}" data-color-mode="{{ crm_color_mode }}" style="--theme-primary:{{ crm_theme.primary }};--theme-primary-rgb:{{ crm_theme.primary_rgb }};--theme-sidebar:{{ crm_theme.sidebar }};--theme-sidebar-glow:{{ crm_theme.sidebar_glow }};--theme-sidebar-text:{{ crm_theme.sidebar_text }};--theme-sidebar-muted:{{ crm_theme.sidebar_muted }};--theme-soft:{{ crm_theme.soft }};--theme-soft-hover:{{ crm_theme.soft_hover }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -9,10 +9,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'crm/app.css' %}">
-  <link rel="stylesheet" href="{% static 'crm/forms.css' %}?v=12">
-  <link rel="stylesheet" href="{% static 'crm/dashboard.css' %}?v=17">
+  <link rel="stylesheet" href="{% static 'crm/dashboard.css' %}?v=19">
   <link rel="stylesheet" href="{% static 'crm/close-service.css' %}?v=7">
-  <script src="{% static 'crm/app.js' %}?v=9" defer></script>
+  <link rel="stylesheet" href="{% static 'crm/forms.css' %}?v=18">
+  <script src="{% static 'crm/app.js' %}?v=11" defer></script>
   <script src="{% static 'crm/registry.js' %}?v=7" defer></script>
   <script src="{% static 'crm/clients.js' %}?v=5" defer></script>
   <script src="{% static 'crm/client-detail.js' %}?v=3" defer></script>

@@ -179,6 +179,48 @@ class ServiceNotificationSetting(models.Model):
         return f'{self.get_service_type_display()}: {self.warning_days} дней'
 
 
+class AppearanceSetting(models.Model):
+    class ColorMode(models.TextChoices):
+        LIGHT = 'light', 'Дневной режим'
+        DARK = 'dark', 'Тёмный режим'
+
+    class Theme(models.TextChoices):
+        TEAL = 'teal', 'Фирменная бирюза'
+        INDIGO = 'indigo', 'Премиальный индиго'
+        OCEAN = 'ocean', 'Глубокий океан'
+        EMERALD = 'emerald', 'Тёмный изумруд'
+        RUBY = 'ruby', 'Благородный рубин'
+        SKY = 'sky', 'Светлое небо'
+        SAND = 'sand', 'Тёплый песок'
+        VIOLET = 'violet', 'Яркий фиолетовый'
+        CORAL = 'coral', 'Яркий коралл'
+
+    theme = models.CharField('Цветовая тема', max_length=16, choices=Theme.choices, default=Theme.INDIGO)
+    color_mode = models.CharField(
+        'Режим интерфейса', max_length=8, choices=ColorMode.choices, default=ColorMode.LIGHT
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'оформление CRM'
+        verbose_name_plural = 'оформление CRM'
+
+    @classmethod
+    def get_theme(cls):
+        return cls.objects.filter(pk=1).values_list('theme', flat=True).first() or cls.Theme.INDIGO
+
+    @classmethod
+    def get_color_mode(cls):
+        return cls.objects.filter(pk=1).values_list('color_mode', flat=True).first() or cls.ColorMode.LIGHT
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.get_theme_display()
+
+
 def delete_file_after_commit(field_file):
     if field_file and field_file.name:
         transaction.on_commit(lambda: field_file.delete(save=False))

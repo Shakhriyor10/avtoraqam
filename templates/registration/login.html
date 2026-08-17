@@ -1,6 +1,6 @@
 {% load static %}
 <!doctype html>
-<html lang="ru">
+<html lang="ru" data-theme="{{ crm_theme_name }}" data-color-mode="{{ crm_color_mode }}" style="--theme-primary:{{ crm_theme.primary }};--theme-primary-rgb:{{ crm_theme.primary_rgb }};--theme-sidebar:{{ crm_theme.sidebar }};--theme-sidebar-glow:{{ crm_theme.sidebar_glow }};--theme-sidebar-text:{{ crm_theme.sidebar_text }};--theme-sidebar-muted:{{ crm_theme.sidebar_muted }};--theme-soft:{{ crm_theme.soft }};--theme-soft-hover:{{ crm_theme.soft_hover }}">
 <head>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -9,7 +9,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Вход · Avtoraqam CRM</title>
   <link rel="stylesheet" href="{% static 'crm/login.css' %}">
-  <link rel="stylesheet" href="{% static 'crm/login-center.css' %}?v=3">
+  <link rel="stylesheet" href="{% static 'crm/login-center.css' %}?v=8">
 </head>
 <body>
 <main class="login-page">

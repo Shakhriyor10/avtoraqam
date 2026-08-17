@@ -2,7 +2,34 @@
 {% block title %}Настройки уведомлений · Avtoraqam CRM{% endblock %}
 {% block content %}
 <header class="settings-header"><div><p class="eyebrow">Настройки CRM</p><h1>Сроки уведомлений</h1><p>Настройте индивидуальный период предупреждения для каждого типа услуги.</p></div><div class="settings-help"><span>i</span><p>Статус услуги и Telegram-уведомление включатся за указанное количество дней до окончания.</p></div></header>
-<form method="post" class="notification-settings">{% csrf_token %}
+<section class="appearance-settings">
+  <div class="section-title"><div><h2>Режим интерфейса</h2><p>Дневной или профессиональный тёмный вид для всей системы.</p></div></div>
+  <form method="post" class="mode-form">{% csrf_token %}<input type="hidden" name="settings_action" value="color_mode">
+    <div class="mode-grid">
+      {% for value, label in color_modes %}<label class="mode-card {{ value }}{% if value == selected_color_mode %} selected{% endif %}">
+        <input type="radio" name="color_mode" value="{{ value }}" {% if value == selected_color_mode %}checked{% endif %}>
+        <span class="mode-preview"><i></i><b></b><em></em><small></small></span>
+        <span><strong>{{ label }}</strong><small>{% if value == 'dark' %}Комфортно вечером и при слабом освещении{% else %}Чистый светлый интерфейс для работы днём{% endif %}</small></span>
+        <span class="mode-check">✓</span>
+      </label>{% endfor %}
+    </div>
+    <div class="theme-actions"><span>Цветовая тема сохранится в обоих режимах.</span><button class="button" type="submit">Применить режим</button></div>
+  </form>
+  <div class="section-title"><div><h2>Цветовая тема</h2><p>Выбранное оформление применяется для всех сотрудников и страницы входа.</p></div></div>
+  <form method="post" class="theme-form">{% csrf_token %}<input type="hidden" name="settings_action" value="theme">
+    <div class="theme-grid">
+      {% for theme in appearance_themes %}<label class="theme-card{% if theme.value == selected_theme %} selected{% endif %}" style="--preview-primary:{{ theme.primary }};--preview-sidebar:{{ theme.sidebar }};--preview-soft:{{ theme.soft }}">
+        <input type="radio" name="theme" value="{{ theme.value }}" {% if theme.value == selected_theme %}checked{% endif %}>
+        <span class="theme-preview"><i></i><b></b><em></em><small></small></span>
+        <span class="theme-name"><strong>{{ theme.label }}</strong><small>{{ theme.primary }}</small></span>
+        <span class="theme-check">✓</span>
+      </label>{% endfor %}
+    </div>
+    <div class="theme-actions"><span>Тема изменится сразу после сохранения.</span><button class="button" type="submit">Применить тему</button></div>
+  </form>
+</section>
+<div class="section-title"><div><h2>Сроки уведомлений</h2><p>Индивидуальный период для каждого типа услуги.</p></div></div>
+<form method="post" class="notification-settings">{% csrf_token %}<input type="hidden" name="settings_action" value="notifications">
   <div class="notification-grid">
     {% for row in settings_rows %}<label class="notification-card {{ row.value }}">
       <span class="notification-icon" aria-hidden="true">{% if row.value == 'insurance' %}✓{% elif row.value == 'tinting' %}◐{% elif row.value == 'power_of_attorney' %}✎{% else %}+{% endif %}</span>

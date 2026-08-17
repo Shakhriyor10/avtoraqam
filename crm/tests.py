@@ -8,7 +8,7 @@ from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone
 
-from .models import Client, ClientFile, ServiceNotificationSetting, ServiceRecord, Vehicle
+from .models import AppearanceSetting, Client, ClientFile, ServiceNotificationSetting, ServiceRecord, Vehicle
 
 
 class CrmFlowTests(TestCase):
@@ -21,6 +21,39 @@ class CrmFlowTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Создать документ')
         self.assertContains(response, 'Добавлено услуг')
+
+    def test_superuser_can_change_global_theme(self):
+        response = self.client.post(reverse('crm:notification_settings'), {
+            'settings_action': 'theme', 'theme': 'teal',
+        })
+        self.assertRedirects(response, reverse('crm:notification_settings'))
+        self.assertEqual(AppearanceSetting.get_theme(), 'teal')
+        dashboard = self.client.get(reverse('crm:dashboard'))
+        self.assertContains(dashboard, 'data-theme="teal"')
+        self.assertContains(dashboard, '#41B9B8')
+
+    def test_unknown_theme_is_not_saved(self):
+        response = self.client.post(reverse('crm:notification_settings'), {
+            'settings_action': 'theme', 'theme': 'unknown',
+        }, follow=True)
+        self.assertContains(response, 'Выберите доступную цветовую тему')
+        self.assertEqual(AppearanceSetting.get_theme(), 'indigo')
+
+    def test_superuser_can_enable_dark_mode(self):
+        response = self.client.post(reverse('crm:notification_settings'), {
+            'settings_action': 'color_mode', 'color_mode': 'dark',
+        })
+        self.assertRedirects(response, reverse('crm:notification_settings'))
+        self.assertEqual(AppearanceSetting.get_color_mode(), 'dark')
+        dashboard = self.client.get(reverse('crm:dashboard'))
+        self.assertContains(dashboard, 'data-color-mode="dark"')
+
+    def test_invalid_color_mode_is_rejected(self):
+        response = self.client.post(reverse('crm:notification_settings'), {
+            'settings_action': 'color_mode', 'color_mode': 'auto',
+        }, follow=True)
+        self.assertContains(response, 'Выберите дневной или тёмный режим')
+        self.assertEqual(AppearanceSetting.get_color_mode(), 'light')
 
     def test_custom_login_and_logout(self):
         self.client.logout()

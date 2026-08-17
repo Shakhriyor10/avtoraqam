@@ -18,6 +18,25 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   setupMoneyInputs();
 
+  const themeCards = document.querySelectorAll('.theme-card');
+  themeCards.forEach(card => {
+    const radio = card.querySelector('input[name="theme"]');
+    radio?.addEventListener('change', () => {
+      themeCards.forEach(item => item.classList.toggle(
+        'selected', item.querySelector('input[name="theme"]')?.checked,
+      ));
+    });
+  });
+  const modeCards = document.querySelectorAll('.mode-card');
+  modeCards.forEach(card => {
+    const radio = card.querySelector('input[name="color_mode"]');
+    radio?.addEventListener('change', () => {
+      modeCards.forEach(item => item.classList.toggle(
+        'selected', item.querySelector('input[name="color_mode"]')?.checked,
+      ));
+    });
+  });
+
   const labelsNode = document.getElementById('additional-type-labels');
   const serviceLabels = labelsNode ? JSON.parse(labelsNode.textContent) : {};
   document.querySelectorAll('[data-additional-service]').forEach(card => {

@@ -717,6 +717,23 @@ class CrmFlowTests(TestCase):
         )
         self.assertEqual(owner.services.get(service_type='tinting').price, 300000)
 
+    def test_service_form_adds_client_to_favorites_only_after_successful_save(self):
+        owner = Client.objects.create(full_name='Будущий избранный', phone='998900000009')
+        vehicle = Vehicle.objects.create(client=owner, plate_number='01FAVOR')
+        url = reverse('crm:service_create', args=['insurance'])
+        response = self.client.get(url)
+        self.assertContains(response, 'id="service-favorite-toggle"')
+        self.assertFalse(ClientFavorite.objects.filter(user=self.user, client=owner).exists())
+        response = self.client.post(url, {
+            'existing_client': owner.pk,
+            'existing_vehicle': vehicle.pk,
+            'issued_on': timezone.localdate(),
+            'expires_on': timezone.localdate() + timedelta(days=365),
+            'add_to_favorites': '1',
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(ClientFavorite.objects.filter(user=self.user, client=owner).exists())
+
     def test_duplicate_service_requires_confirmation(self):
         owner = Client.objects.create(full_name='Повторный клиент', phone='998900000003')
         vehicle = Vehicle.objects.create(client=owner, plate_number='01DUPLICATE')

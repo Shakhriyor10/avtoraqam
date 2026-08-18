@@ -775,6 +775,8 @@ def service_create(request, service_type):
             ).exclude(pk=service.pk).update(renewed_by=service)
             for uploaded in attached_files:
                 ServiceFile.objects.create(service=service, file=uploaded)
+        if request.POST.get('add_to_favorites') == '1':
+            ClientFavorite.objects.get_or_create(user=request.user, client=client)
         messages.success(request, f'Создано услуг: {len(services_to_create)}. Клиент: {client.full_name}.')
         return redirect('crm:client_detail', pk=client.pk)
     return _render_service_create(

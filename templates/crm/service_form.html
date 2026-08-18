@@ -5,10 +5,11 @@
 <form method="post" enctype="multipart/form-data" class="form-card service-create-card" id="service-create-form" data-service-type="{{ service_type }}" data-duplicate-check-url="{% url 'crm:service_duplicate_check' %}">{% csrf_token %}
   <input type="hidden" name="duplicate_confirmed" id="duplicate-confirmed" value="0">
   <input type="hidden" name="duplicate_skip_types" id="duplicate-skip-types" value="">
+  <input type="hidden" name="add_to_favorites" id="add-to-favorites" value="{% if request.POST.add_to_favorites == '1' %}1{% else %}0{% endif %}">
   {% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors }}</div>{% endif %}
   {% if additional_services.non_form_errors %}<div class="form-errors">{{ additional_services.non_form_errors }}</div>{% endif %}
   {% if renewing_service %}<div class="message">Продление услуги: {{ renewing_service.client.full_name }} · {{ renewing_service.vehicle.plate_number }}. Клиент и автомобиль уже выбраны.</div>{% endif %}
-  <fieldset><legend><span>1</span> Клиент</legend><div class="form-grid">
+  <fieldset><legend class="client-step-legend"><span>1</span> Клиент<button type="button" class="service-favorite-toggle{% if request.POST.add_to_favorites == '1' %} is-selected{% endif %}" id="service-favorite-toggle" aria-pressed="{% if request.POST.add_to_favorites == '1' %}true{% else %}false{% endif %}" title="Добавить клиента в избранное после сохранения услуги"><svg viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.7-7.5 1.1-1.1a5.5 5.5 0 0 0 0-7.8Z"/></svg></button></legend><div class="form-grid">
     {% for field in form %}{% if field.name == 'existing_vehicle' %}</div></fieldset><fieldset><legend><span>2</span> Автомобиль</legend><div class="form-grid">{% endif %}{% if field.name == 'issued_on' %}</div></fieldset><fieldset><legend><span>3</span> Основная услуга — {{ service_name }}</legend><div class="form-grid">{% endif %}<label class="{% if field.name == 'notes' or field.name == 'passport_files' or field.name == 'service_files' %}wide{% endif %}"><span>{{ field.label }}</span>{{ field }}{% if field.errors %}<small class="error">{{ field.errors|striptags }}</small>{% endif %}</label>{% endfor %}
   </div></fieldset>
   {% if not renewing_service %}

@@ -1,4 +1,13 @@
 document.addEventListener('DOMContentLoaded', () => {
+  const serviceFavoriteToggle = document.getElementById('service-favorite-toggle');
+  const addToFavorites = document.getElementById('add-to-favorites');
+  serviceFavoriteToggle?.addEventListener('click', () => {
+    const selected = addToFavorites.value !== '1';
+    addToFavorites.value = selected ? '1' : '0';
+    serviceFavoriteToggle.classList.toggle('is-selected', selected);
+    serviceFavoriteToggle.setAttribute('aria-pressed', String(selected));
+  });
+
   const modeToggle = document.getElementById('color-mode-toggle');
   if (modeToggle) {
     modeToggle.addEventListener('click', async () => {

@@ -8,7 +8,7 @@ from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone
 
-from .models import AppearanceSetting, Client, ClientFile, ServiceNotificationSetting, ServiceRecord, Vehicle
+from .models import AppearanceSetting, Client, ClientFavorite, ClientFile, ServiceNotificationSetting, ServiceRecord, Vehicle
 
 
 class CrmFlowTests(TestCase):
@@ -54,6 +54,24 @@ class CrmFlowTests(TestCase):
         }, follow=True)
         self.assertContains(response, 'Выберите дневной или тёмный режим')
         self.assertEqual(AppearanceSetting.get_color_mode(), 'light')
+
+    def test_navbar_color_mode_toggle(self):
+        response = self.client.post(reverse('crm:color_mode_toggle'), {'color_mode': 'dark'})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['color_mode'], 'dark')
+        self.assertEqual(AppearanceSetting.get_color_mode(), 'dark')
+
+    def test_client_favorite_toggle_and_page(self):
+        owner = Client.objects.create(full_name='Любимый клиент', phone='998901234567')
+        url = reverse('crm:client_favorite_toggle', args=[owner.pk])
+        response = self.client.post(url)
+        self.assertTrue(response.json()['favorite'])
+        self.assertTrue(ClientFavorite.objects.filter(user=self.user, client=owner).exists())
+        favorites = self.client.get(reverse('crm:favorite_clients'))
+        self.assertContains(favorites, 'Любимый клиент')
+        response = self.client.post(url)
+        self.assertFalse(response.json()['favorite'])
+        self.assertFalse(ClientFavorite.objects.filter(user=self.user, client=owner).exists())
 
     def test_custom_login_and_logout(self):
         self.client.logout()
@@ -341,7 +359,7 @@ class CrmFlowTests(TestCase):
         )
         response = self.client.post(
             reverse('crm:service_close', args=[service.pk]),
-            {'reason': 'declined'},
+            {'reason': 'vehicle_sold'},
             HTTP_X_REQUESTED_WITH='XMLHttpRequest',
         )
         self.assertEqual(response.status_code, 200)
@@ -349,11 +367,11 @@ class CrmFlowTests(TestCase):
             'ok': True,
             'status': 'closed',
             'status_label': 'Закрыта',
-            'reason_label': 'Клиент отказался',
+            'reason_label': 'Машина была продана',
         })
         service.refresh_from_db()
         self.assertEqual(service.status, 'closed')
-        self.assertEqual(service.closed_reason, 'declined')
+        self.assertEqual(service.closed_reason, 'vehicle_sold')
 
     def test_service_delete_requires_current_user_password(self):
         owner = Client.objects.create(full_name='Клиент удаления', phone='5050')

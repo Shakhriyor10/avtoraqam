@@ -30,6 +30,25 @@ class ClientFile(models.Model):
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
 
+class ClientFavorite(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, related_name='favorite_clients', on_delete=models.CASCADE
+    )
+    client = models.ForeignKey(Client, related_name='favorited_by', on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'избранный клиент'
+        verbose_name_plural = 'избранные клиенты'
+        constraints = [
+            models.UniqueConstraint(fields=['user', 'client'], name='unique_user_favorite_client')
+        ]
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.user} · {self.client}'
+
+
 class Vehicle(models.Model):
     client = models.ForeignKey(Client, related_name='vehicles', on_delete=models.CASCADE)
     plate_number = models.CharField('Госномер', max_length=24, db_index=True)
@@ -60,6 +79,7 @@ class ServiceRecord(models.Model):
 
     class CloseReason(models.TextChoices):
         ELSEWHERE = 'elsewhere', 'Оформлено в другом месте'
+        VEHICLE_SOLD = 'vehicle_sold', 'Машина была продана'
         DECLINED = 'declined', 'Клиент отказался'
         NOT_RELEVANT = 'not_relevant', 'Услуга больше не актуальна'
         OTHER = 'other', 'Другая причина'

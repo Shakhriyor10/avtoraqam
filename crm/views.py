@@ -6,7 +6,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, Exists, OuterRef, Q, Sum
 from django.core.paginator import Paginator
 from django.http import HttpResponseNotAllowed, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -19,7 +19,7 @@ from .forms import (
     VehicleForm, VehicleFormSet,
 )
 from .context_processors import THEMES
-from .models import AppearanceSetting, Client, ClientFile, ServiceFile, ServiceNotificationSetting, ServiceRecord, Vehicle
+from .models import AppearanceSetting, Client, ClientFavorite, ClientFile, ServiceFile, ServiceNotificationSetting, ServiceRecord, Vehicle
 
 
 SERVICE_CARD_ORDER = ('avtoraqam', 'tinting', 'insurance', 'power_of_attorney', 'other')
@@ -135,6 +135,8 @@ def dashboard_stats(date_from='', date_to='', days_map=None):
         'client_count': clients.count(),
         'vehicle_count': vehicles.count(),
         'service_count': created_services.count(),
+        'tinting_count': created_services.filter(service_type=ServiceRecord.ServiceType.TINTING).count(),
+        'insurance_count': created_services.filter(service_type=ServiceRecord.ServiceType.INSURANCE).count(),
         'warning_count': expiring_services.filter(
             warning_query(today, days_map)
         ).count(),
@@ -157,6 +159,11 @@ def dashboard(request):
         page_obj = Paginator(service_list, 50).get_page(request.GET.get('page'))
         displayed_services = list(page_obj.object_list)
     attach_warning_days(displayed_services, days_map)
+    favorite_ids = set(ClientFavorite.objects.filter(
+        user=request.user, client_id__in={item.client_id for item in displayed_services}
+    ).values_list('client_id', flat=True))
+    for service in displayed_services:
+        service.client_is_favorite = service.client_id in favorite_ids
     context = {
         **dashboard_stats(date_from, date_to, days_map),
         'services': displayed_services,
@@ -279,6 +286,21 @@ def notification_settings(request):
 
 @login_required
 @transaction.atomic
+def color_mode_toggle(request):
+    if request.method != 'POST':
+        return HttpResponseNotAllowed(['POST'])
+    requested = request.POST.get('color_mode', '')
+    current = AppearanceSetting.get_color_mode()
+    color_mode = requested if requested in AppearanceSetting.ColorMode.values else (
+        AppearanceSetting.ColorMode.LIGHT if current == AppearanceSetting.ColorMode.DARK
+        else AppearanceSetting.ColorMode.DARK
+    )
+    AppearanceSetting.objects.update_or_create(pk=1, defaults={'color_mode': color_mode})
+    return JsonResponse({'ok': True, 'color_mode': color_mode})
+
+
+@login_required
+@transaction.atomic
 def user_create(request):
     if not request.user.is_superuser:
         raise PermissionDenied
@@ -320,8 +342,12 @@ def service_search(request):
     if not filtered:
         services = services[:50]
     services = attach_warning_days(list(services), days_map)
+    favorite_ids = set(ClientFavorite.objects.filter(
+        user=request.user, client_id__in={item.client_id for item in services}
+    ).values_list('client_id', flat=True))
     return JsonResponse({
         'results': [{
+            'client_id': item.client_id,
             'client': item.client.full_name,
             'phone': item.client.phone,
             'client_url': reverse('crm:client_detail', args=[item.client_id]),
@@ -335,6 +361,8 @@ def service_search(request):
             'delete_url': reverse('crm:service_delete', args=[item.pk]),
             'deletable': request.user.is_superuser,
             'closable': item.status in {'warning', 'expired'},
+            'favorite': item.client_id in favorite_ids,
+            'favorite_url': reverse('crm:client_favorite_toggle', args=[item.client_id]),
         } for item in services],
         'filtered': filtered,
         'stats': dashboard_stats(
@@ -346,7 +374,10 @@ def service_search(request):
 @login_required
 def client_list(request):
     query = request.GET.get('q', '').strip()
-    clients = Client.objects.annotate(vehicle_count=Count('vehicles', distinct=True)).order_by('-created_at', '-pk')
+    favorite_query = ClientFavorite.objects.filter(user=request.user, client_id=OuterRef('pk'))
+    clients = Client.objects.annotate(
+        vehicle_count=Count('vehicles', distinct=True), is_favorite=Exists(favorite_query)
+    ).order_by('-created_at', '-pk')
     if query:
         clients = clients.filter(
             Q(full_name__icontains=query) | Q(phone__icontains=query) |
@@ -361,9 +392,13 @@ def client_list(request):
 @login_required
 def client_search(request):
     query = request.GET.get('q', '').strip()
+    favorites_only = request.GET.get('favorites') == '1'
+    favorite_query = ClientFavorite.objects.filter(user=request.user, client_id=OuterRef('pk'))
     clients = Client.objects.annotate(
-        vehicle_count=Count('vehicles', distinct=True)
+        vehicle_count=Count('vehicles', distinct=True), is_favorite=Exists(favorite_query)
     ).order_by('-created_at', '-pk')
+    if favorites_only:
+        clients = clients.filter(is_favorite=True)
     if query:
         clients = clients.filter(
             Q(full_name__icontains=query) | Q(phone__icontains=query) |
@@ -372,6 +407,7 @@ def client_search(request):
     else:
         clients = clients[:50]
     return JsonResponse({'results': [{
+        'id': client.pk,
         'name': client.full_name,
         'phone': client.phone,
         'vehicle_count': client.vehicle_count,
@@ -380,7 +416,33 @@ def client_search(request):
         'vehicles_url': reverse('crm:client_vehicles', args=[client.pk]),
         'delete_url': reverse('crm:client_delete', args=[client.pk]),
         'deletable': request.user.is_superuser,
+        'favorite': client.is_favorite,
+        'favorite_url': reverse('crm:client_favorite_toggle', args=[client.pk]),
     } for client in clients]})
+
+
+@login_required
+def favorite_clients(request):
+    favorite_query = ClientFavorite.objects.filter(user=request.user, client_id=OuterRef('pk'))
+    clients = Client.objects.annotate(
+        vehicle_count=Count('vehicles', distinct=True), is_favorite=Exists(favorite_query)
+    ).filter(is_favorite=True).order_by('-favorited_by__created_at')
+    return render(request, 'crm/favorite_clients.html', {'clients': clients})
+
+
+@login_required
+@transaction.atomic
+def client_favorite_toggle(request, pk):
+    if request.method != 'POST':
+        return HttpResponseNotAllowed(['POST'])
+    client = get_object_or_404(Client, pk=pk)
+    favorite, created = ClientFavorite.objects.get_or_create(user=request.user, client=client)
+    if not created:
+        favorite.delete()
+    return JsonResponse({
+        'ok': True, 'favorite': created, 'client_id': client.pk,
+        'favorite_count': ClientFavorite.objects.filter(user=request.user).count(),
+    })
 
 
 @login_required
@@ -413,7 +475,10 @@ def client_detail(request, pk):
     services = attach_warning_days(list(
         client.services.select_related('vehicle').prefetch_related('files')
     ))
-    return render(request, 'crm/client_detail.html', {'client': client, 'services': services})
+    return render(request, 'crm/client_detail.html', {
+        'client': client, 'services': services,
+        'client_is_favorite': ClientFavorite.objects.filter(user=request.user, client=client).exists(),
+    })
 
 
 @login_required

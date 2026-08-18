@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!response.ok) return;
       const data = await response.json();
       body.innerHTML = data.results.length ? data.results.map(client => `
-        <tr><td><strong>${escapeHtml(client.name)}</strong></td><td>${escapeHtml(client.phone)}</td>
+        <tr><td><div class="client-name-with-favorite"><button type="button" class="favorite-button${client.favorite ? ' is-favorite' : ''}" data-client-id="${client.id}" data-favorite-url="${escapeHtml(client.favorite_url)}" aria-label="Добавить клиента в избранное"><svg viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.7-7.5 1.1-1.1a5.5 5.5 0 0 0 0-7.8Z"/></svg></button><strong>${escapeHtml(client.name)}</strong></div></td><td>${escapeHtml(client.phone)}</td>
         <td><div class="vehicle-count">${client.vehicle_count}${client.vehicle_count ? `<button type="button" class="vehicle-eye" data-vehicles-url="${escapeHtml(client.vehicles_url)}" aria-label="Показать автомобили" title="Показать автомобили"><svg viewBox="0 0 24 24"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></button>` : ''}</div></td><td>${escapeHtml(client.created_at)}</td>
         <td><div class="row-actions"><a href="${escapeHtml(client.url)}">Открыть →</a><button type="button" class="delete-client-link" data-client="${escapeHtml(client.name)}" data-delete-url="${escapeHtml(client.delete_url)}" aria-label="Удалить клиента" title="Удалить клиента"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 4v5m4-5v5"/></svg></button></div></td></tr>
       `).join('') : '<tr><td colspan="5" class="empty">Клиенты не найдены.</td></tr>';

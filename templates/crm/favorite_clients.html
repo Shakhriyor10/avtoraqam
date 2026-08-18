@@ -1,0 +1,9 @@
+{% extends 'crm/base.html' %}
+{% block title %}Наши клиенты · Avtoraqam CRM{% endblock %}
+{% block content %}
+<header><div><h1>Наши клиенты</h1></div><a class="button" href="{% url 'crm:client_list' %}">Все клиенты</a></header>
+<form class="search" id="favorite-client-search" data-search-url="{% url 'crm:client_search' %}"><input type="search" name="q" autocomplete="off" placeholder="Введите имя, телефон или госномер"><button class="button" type="submit">Найти</button></form>
+<section class="table-card"><table><thead><tr><th>Клиент</th><th>Телефон</th><th>Автомобилей</th><th>Дата добавления</th><th></th></tr></thead><tbody id="favorite-client-results">
+{% for client in clients %}<tr data-favorite-row="{{ client.pk }}"><td><div class="client-name-with-favorite"><button type="button" class="favorite-button is-favorite" data-client-id="{{ client.pk }}" data-favorite-url="{% url 'crm:client_favorite_toggle' client.pk %}" data-remove-row="true" aria-label="Убрать клиента из избранного"><svg viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.7-7.5 1.1-1.1a5.5 5.5 0 0 0 0-7.8Z"/></svg></button><strong>{{ client.full_name }}</strong></div></td><td>{{ client.phone }}</td><td>{{ client.vehicle_count }}</td><td>{{ client.created_at|date:'d.m.Y' }}</td><td><div class="row-actions"><a href="{% url 'crm:client_detail' client.pk %}">Открыть →</a></div></td></tr>{% empty %}<tr><td colspan="5" class="empty">Избранных клиентов пока нет.</td></tr>{% endfor %}
+</tbody></table></section>
+{% endblock %}

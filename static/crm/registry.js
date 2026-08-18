@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!response.ok) return;
       const data = await response.json();
       body.innerHTML = data.results.length ? data.results.map(item => `
-        <tr><td><a href="${escapeHtml(item.client_url)}"><strong>${escapeHtml(item.client)}</strong><small>${escapeHtml(item.phone)}</small></a></td>
+        <tr><td><div class="client-name-with-favorite"><button type="button" class="favorite-button${item.favorite ? ' is-favorite' : ''}" data-client-id="${item.client_id}" data-favorite-url="${escapeHtml(item.favorite_url)}" aria-label="Добавить клиента в избранное"><svg viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.7-7.5 1.1-1.1a5.5 5.5 0 0 0 0-7.8Z"/></svg></button><a href="${escapeHtml(item.client_url)}"><strong>${escapeHtml(item.client)}</strong><small>${escapeHtml(item.phone)}</small></a></div></td>
         <td>${escapeHtml(item.vehicle)}</td><td>${escapeHtml(item.service)}</td><td>${escapeHtml(item.expires_on)}</td>
         <td><span class="badge ${escapeHtml(item.status)}">${escapeHtml(item.status_label)}</span></td>
         <td><div class="row-actions">${item.closable ? `<a class="renew-service-link" href="${escapeHtml(item.renew_url)}">Продлить</a><a class="close-service-link" data-service="${escapeHtml(item.service)}" data-client="${escapeHtml(item.client)}" data-vehicle="${escapeHtml(item.vehicle)}" href="${escapeHtml(item.close_url)}">Закрыть</a>` : ''}<button type="button" class="delete-service-link" data-service="${escapeHtml(item.service)}" data-client="${escapeHtml(item.client)}" data-vehicle="${escapeHtml(item.vehicle)}" data-delete-url="${escapeHtml(item.delete_url)}" aria-label="Удалить услугу" title="Удалить услугу"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 4v5m4-5v5"/></svg></button></div></td></tr>
@@ -27,8 +27,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (pagination) pagination.hidden = true;
       if (count) count.textContent = `Найдено: ${data.results.length}`;
       const statTargets = {
-        'stat-clients': data.stats.client_count,
-        'stat-vehicles': data.stats.vehicle_count,
+        'stat-tinting': data.stats.tinting_count,
+        'stat-insurance': data.stats.insurance_count,
         'stat-services': data.stats.service_count,
         'stat-warning': data.stats.warning_count,
         'stat-expired': data.stats.expired_count,

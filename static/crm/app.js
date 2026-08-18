@@ -1,4 +1,28 @@
 document.addEventListener('DOMContentLoaded', () => {
+  const modeToggle = document.getElementById('color-mode-toggle');
+  if (modeToggle) {
+    modeToggle.addEventListener('click', async () => {
+      if (modeToggle.disabled) return;
+      const html = document.documentElement;
+      const previous = html.dataset.colorMode || 'light';
+      const next = previous === 'dark' ? 'light' : 'dark';
+      html.dataset.colorMode = next;
+      modeToggle.disabled = true;
+      try {
+        const csrfToken = document.querySelector('[name="csrfmiddlewaretoken"]')?.value || '';
+        const body = new URLSearchParams({csrfmiddlewaretoken: csrfToken, color_mode: next});
+        const response = await fetch(modeToggle.dataset.url, {
+          method: 'POST', body, headers: {'X-Requested-With': 'XMLHttpRequest'},
+        });
+        if (!response.ok) throw new Error('Mode update failed');
+      } catch (error) {
+        html.dataset.colorMode = previous;
+      } finally {
+        modeToggle.disabled = false;
+      }
+    });
+  }
+
   function setupMoneyInputs(root = document) {
     root.querySelectorAll('.money-input').forEach(input => {
       if (input.dataset.moneyReady) return;

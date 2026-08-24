@@ -1,4 +1,31 @@
 document.addEventListener('DOMContentLoaded', () => {
+  const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+  const mobileMenuBackdrop = document.getElementById('mobile-menu-backdrop');
+  const sidebar = document.querySelector('.sidebar');
+  if (mobileMenuToggle && mobileMenuBackdrop && sidebar) {
+    const closeMobileMenu = () => {
+      document.body.classList.remove('mobile-menu-open');
+      mobileMenuToggle.setAttribute('aria-expanded', 'false');
+      mobileMenuToggle.setAttribute('aria-label', 'Открыть меню');
+    };
+    const openMobileMenu = () => {
+      document.body.classList.add('mobile-menu-open');
+      mobileMenuToggle.setAttribute('aria-expanded', 'true');
+      mobileMenuToggle.setAttribute('aria-label', 'Закрыть меню');
+    };
+    mobileMenuToggle.addEventListener('click', () => {
+      document.body.classList.contains('mobile-menu-open') ? closeMobileMenu() : openMobileMenu();
+    });
+    mobileMenuBackdrop.addEventListener('click', closeMobileMenu);
+    sidebar.querySelectorAll('nav a').forEach(link => link.addEventListener('click', closeMobileMenu));
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape') closeMobileMenu();
+    });
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 700) closeMobileMenu();
+    });
+  }
+
   const serviceFavoriteToggle = document.getElementById('service-favorite-toggle');
   const addToFavorites = document.getElementById('add-to-favorites');
   serviceFavoriteToggle?.addEventListener('click', () => {

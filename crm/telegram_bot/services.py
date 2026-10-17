@@ -4,7 +4,7 @@ from pathlib import Path
 from datetime import timedelta
 
 from aiogram import Bot
-from aiogram.types import FSInputFile, InputMediaDocument
+from aiogram.types import FSInputFile, InlineKeyboardButton, InlineKeyboardMarkup, InputMediaDocument
 from asgiref.sync import sync_to_async
 from django.utils import timezone
 from django.db import close_old_connections
@@ -114,16 +114,31 @@ async def send_service_notification(bot: Bot, chat_id: int | str, service, inclu
 
 async def send_due_notifications(bot: Bot, chat_id: int | str):
     records = await sync_to_async(expiring_records, thread_sensitive=True)()
-    sent = 0
     today = timezone.localdate()
-    for service in records:
-        if service.notified_at and timezone.localtime(service.notified_at).date() >= today:
-            continue
-        try:
-            await send_service_notification(bot, chat_id, service)
-            service.notified_at = timezone.now()
-            await sync_to_async(service.save, thread_sensitive=True)(update_fields=['notified_at'])
-            sent += 1
-        except Exception:
-            logging.exception('Не удалось отправить уведомление для услуги id=%s', service.pk)
-    return sent
+    due_records = [
+        service for service in records
+        if not service.notified_at or timezone.localtime(service.notified_at).date() < today
+    ]
+    if not due_records:
+        return 0
+
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[[
+        InlineKeyboardButton(text='Показать услуги', callback_data='show_expiring')
+    ]])
+    text = (
+        '⚠️ <b>Услуги требуют внимания</b>\n\n'
+        f'Истекают или уже просрочены: <b>{len(due_records)}</b>.'
+    )
+    try:
+        await bot.send_message(chat_id, text, parse_mode='HTML', reply_markup=keyboard)
+    except Exception:
+        logging.exception('Не удалось отправить сводное уведомление об истекающих услугах')
+        return 0
+
+    notified_at = timezone.now()
+    record_ids = [service.pk for service in due_records]
+    await sync_to_async(
+        lambda: ServiceRecord.objects.filter(pk__in=record_ids).update(notified_at=notified_at),
+        thread_sensitive=True,
+    )()
+    return len(due_records)

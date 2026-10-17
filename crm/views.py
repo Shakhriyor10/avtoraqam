@@ -216,7 +216,7 @@ def filter_services(request, days_map=None):
     elif status == 'closed':
         queryset = queryset.filter(closed_at__isnull=False)
     elif not query:
-        queryset = queryset.filter(closed_at__isnull=True)
+        queryset = queryset.filter(closed_at__isnull=True, renewed_by__isnull=True)
     if date_from:
         queryset = queryset.filter(created_at__date__gte=date_from)
     if date_to:
